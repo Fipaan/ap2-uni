@@ -6,7 +6,7 @@ import (
 
 	"github.com/fipaan/ap2-uni/op-assign/payment-service/internal/domain"
 	"github.com/fipaan/ap2-uni/op-assign/payment-service/internal/usecase"
-	paymentV1 "github.com/fipaan/ap2-uni/op-assign-gen/payment-service/proto/v1"
+	paymentV1 "github.com/fipaan/ap2-uni-gen/op-assign/payment-service/proto/v1"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
