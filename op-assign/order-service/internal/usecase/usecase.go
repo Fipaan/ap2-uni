@@ -7,7 +7,7 @@ import (
 	"database/sql"
 
 	"github.com/fipaan/ap2-uni/op-assign/order-service/internal/domain"
-	"github.com/fipaan/ap2-uni/op-assign/order-service/internal/client"
+	client "github.com/fipaan/ap2-uni/op-assign/order-service/internal/client/grpc"
 
 	"github.com/google/uuid"
 )

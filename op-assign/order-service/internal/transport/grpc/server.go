@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	orderV1 "github.com/fipaan/ap2-uni-gen/order/v1"
+	orderV1 "github.com/fipaan/ap2-uni-op-gen/op-assign/order-service/proto/v1"
 
 	"github.com/lib/pq"
 	"google.golang.org/protobuf/types/known/timestamppb"
