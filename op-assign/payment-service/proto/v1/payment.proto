@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package payment.v1;
 
-option go_package = "github.com/fipaan/ap2-uni-op-gen/op-assign/payment-service/proto/v1;paymentV1";
+option go_package = "github.com/Fipaan/ap2-uni-op-gen/op-assign/payment-service/proto/v1;paymentV1";
 
 import "google/protobuf/timestamp.proto";
 

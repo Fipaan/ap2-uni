@@ -9,7 +9,7 @@ require (
 )
 
 require (
-	github.com/Fipaan/ap2-uni v0.1.2 // indirect
+	github.com/Fipaan/ap2-uni v0.1.3 // indirect
 	github.com/Fipaan/ap2-uni-op-gen v0.1.3 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.15.0 // indirect
