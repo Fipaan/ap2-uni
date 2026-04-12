@@ -14,7 +14,7 @@ import (
 )
 
 type Server struct {
-	paymentV!.UnimplementedPaymentServiceServer
+	paymentV1.UnimplementedPaymentServiceServer
 	uc *usecase.PaymentUsecase
 }
 
@@ -22,7 +22,7 @@ func NewServer(uc *usecase.PaymentUsecase) *Server {
 	return &Server{uc: uc}
 }
 
-func (s *Server) ProcessPayment(ctx context.Context, req *paymentV!.PaymentRequest) (*paymentV!.PaymentResponse, error) {
+func (s *Server) ProcessPayment(ctx context.Context, req *paymentV1.PaymentRequest) (*paymentV1.PaymentResponse, error) {
 	p, err := s.uc.Process(ctx, req.GetOrderId(), req.GetAmount())
 	if err != nil {
 		return nil, mapUsecaseErr(err)
@@ -31,8 +31,8 @@ func (s *Server) ProcessPayment(ctx context.Context, req *paymentV!.PaymentReque
 	return toResponse(p), nil
 }
 
-func toResponse(p *domain.Payment) *paymentV!.PaymentResponse {
-	return &paymentV!.PaymentResponse{
+func toResponse(p *domain.Payment) *paymentV1.PaymentResponse {
+	return &paymentV1.PaymentResponse{
 		PaymentId:     p.ID,
 		TransactionId: p.TransactionID,
 		Status:        p.Status,

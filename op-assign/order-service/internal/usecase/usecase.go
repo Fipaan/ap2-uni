@@ -18,7 +18,7 @@ var ErrInvalidItem         = errors.New("item name is empty")
 var ErrInvalidAmount       = errors.New("amount must be > 0")
 var ErrCancelNonExist      = errors.New("order does not exist")
 var ErrNotPending          = errors.New("order is not pending")
-var ErrPaymentNotAvailable = errors.New("payment service is not available")
+var ErrPaymentNotAvailable = client.ErrPaymentNotAvailable
 
 type OrderRepository interface {
 	Create(ctx context.Context, o *domain.Order) error

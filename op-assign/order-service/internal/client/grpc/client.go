@@ -2,17 +2,19 @@ package grpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	paymentV1 "github.com/fipaan/ap2-uni-op-gen/op-assign/payment-service/proto/v1"
-	"github.com/fipaan/ap2-uni/op-assign/order-service/internal/usecase"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
+
+var ErrPaymentNotAvailable = errors.New("payment service is not available")
 
 type PaymentClient interface {
 	Pay(ctx context.Context, orderID string, amount int64) (string, error)
@@ -59,7 +61,7 @@ func (c *paymentClient) Pay(ctx context.Context, orderID string, amount int64) (
     if err != nil {
 		st, ok := status.FromError(err)
 		if ok && (st.Code() == codes.Unavailable || st.Code() == codes.DeadlineExceeded) {
-			return "", usecase.ErrPaymentNotAvailable
+			return "", ErrPaymentNotAvailable
 		}
 		return "", fmt.Errorf("payment rpc failed: %w", err)
     }

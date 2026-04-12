@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	"github.com/fipaan/ap2-uni/op-assign/config"
 	"github.com/fipaan/ap2-uni/op-assign/payment-service/internal/app"
@@ -12,7 +14,6 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc"
 	_ "github.com/lib/pq"
 )
 
@@ -25,6 +26,11 @@ func main() {
 	App, err := app.NewApp(db)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	lis, err := net.Listen("tcp", config.PaymentGRPCAddr())
+	if err != nil {
+	    log.Fatal(err)
 	}
 
 	server := grpc.NewServer(
