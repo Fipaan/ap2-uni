@@ -8,7 +8,7 @@ import (
 
 	"github.com/fipaan/ap2-uni/op-assign/config"
 	"github.com/fipaan/ap2-uni/op-assign/payment-service/internal/app"
-	paymentV1 "github.com/fipaan/ap2-uni-gen/op-assign/payment-service/proto/v1"
+	paymentV1 "github.com/fipaan/ap2-uni-op-gen/op-assign/payment-service/proto/v1"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
