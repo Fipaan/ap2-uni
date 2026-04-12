@@ -1,0 +1,870 @@
+{
+  "info": {
+    "_postman_id": "6c3f0f3f-8d2c-4b9c-9d7a-2cbfd3a5f111",
+    "name": "Orders and Payments API",
+    "description": "Orders and payments test collection covering validation, idempotency, cancel flow, timeout window, payment success, payment decline, and not found cases.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "order_base_url", "value": "http://localhost:8000" },
+    { "key": "payment_base_url", "value": "http://localhost:8080" },
+    { "key": "idem_key", "value": "" },
+    { "key": "order_id", "value": "" },
+    { "key": "timed_order_id", "value": "" },
+    { "key": "payment_order_id", "value": "" },
+    { "key": "declined_payment_order_id", "value": "" },
+    { "key": "transaction_id", "value": "" },
+    { "key": "declined_payment_tx_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create Order",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('idem_key')) {",
+                  "  pm.collectionVariables.set('idem_key', `idem-${Date.now()}-${Math.random().toString(16).slice(2)}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 201', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('response is JSON', function () {",
+                  "  pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test('order has expected structure', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('ID');",
+                  "  pm.expect(j).to.have.property('CustomerID', 'cust-123');",
+                  "  pm.expect(j).to.have.property('ItemName', 'Keyboard');",
+                  "  pm.expect(j).to.have.property('Amount', 4999);",
+                  "  pm.expect(j).to.have.property('Status', 'Authorized');",
+                  "  pm.expect(j).to.have.property('CreatedAt');",
+                  "  pm.expect(j).to.have.property('IdempotencyKey', pm.collectionVariables.get('idem_key'));",
+                  "});",
+                  "",
+                  "pm.test('order id is saved for later tests', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.collectionVariables.set('order_id', j.ID);",
+                  "  pm.collectionVariables.set('payment_order_id', j.ID);",
+                  "  pm.collectionVariables.set('timed_order_id', j.ID);",
+                  "  pm.expect(pm.collectionVariables.get('order_id')).to.eql(j.ID);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{idem_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": \"cust-123\",\n  \"item_name\": \"Keyboard\",\n  \"amount\": 4999\n}"
+            },
+            "url": {
+              "raw": "{{order_base_url}}/orders",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders"]
+            }
+          }
+        },
+        {
+          "name": "Create Order Again (Idempotency)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('duplicate order returns same ID and idempotency key', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('ID', pm.collectionVariables.get('order_id'));",
+                  "  pm.expect(j).to.have.property('IdempotencyKey', pm.collectionVariables.get('idem_key'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{idem_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": \"cust-123\",\n  \"item_name\": \"Keyboard\",\n  \"amount\": 4999\n}"
+            },
+            "url": {
+              "raw": "{{order_base_url}}/orders",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders"]
+            }
+          }
+        },
+        {
+          "name": "Create Order - Missing CustomerID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () {",
+                  "  pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "",
+                  "pm.test('error is customer id is empty', function () {",
+                  "  pm.expect(pm.response.json()).to.have.property('error', 'customer id is empty');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": \"\",\n  \"item_name\": \"Keyboard\",\n  \"amount\": 4999\n}"
+            },
+            "url": {
+              "raw": "{{order_base_url}}/orders",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders"]
+            }
+          }
+        },
+        {
+          "name": "Create Order - Missing ItemName",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () {",
+                  "  pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "",
+                  "pm.test('error is item name is empty', function () {",
+                  "  pm.expect(pm.response.json()).to.have.property('error', 'item name is empty');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": \"cust-123\",\n  \"item_name\": \"\",\n  \"amount\": 4999\n}"
+            },
+            "url": {
+              "raw": "{{order_base_url}}/orders",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders"]
+            }
+          }
+        },
+        {
+          "name": "Create Order - Invalid Amount",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () {",
+                  "  pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "",
+                  "pm.test('error is amount must be > 0', function () {",
+                  "  pm.expect(pm.response.json()).to.have.property('error', 'amount must be > 0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": \"cust-123\",\n  \"item_name\": \"Keyboard\",\n  \"amount\": 0\n}"
+            },
+            "url": {
+              "raw": "{{order_base_url}}/orders",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders"]
+            }
+          }
+        },
+        {
+          "name": "Create Order - Malformed JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () {",
+                  "  pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "",
+                  "pm.test('returns error message', function () {",
+                  "  pm.expect(pm.response.json()).to.have.property('error');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"customer_id\":\"cust-123\","
+            },
+            "url": {
+              "raw": "{{order_base_url}}/orders",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders"]
+            }
+          }
+        },
+        {
+          "name": "Create Order - Declined Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 201', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('order is marked failed when payment declines', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('Status', 'Failed');",
+                  "  pm.expect(j).to.have.property('Amount', 100001);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": \"cust-123\",\n  \"item_name\": \"Keyboard\",\n  \"amount\": 100001\n}"
+            },
+            "url": {
+              "raw": "{{order_base_url}}/orders",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders"]
+            }
+          }
+        },
+        {
+          "name": "Get Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('returned order matches requested ID', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('ID', pm.collectionVariables.get('order_id'));",
+                  "  pm.expect(j).to.have.property('CustomerID', 'cust-123');",
+                  "  pm.expect(j).to.have.property('ItemName', 'Keyboard');",
+                  "  pm.expect(j).to.have.property('Amount', 4999);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{order_base_url}}/orders/{{order_id}}",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders", "{{order_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Order - Missing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 404', function () {",
+                  "  pm.expect(pm.response.code).to.eql(404);",
+                  "});",
+                  "",
+                  "pm.test('error is not found', function () {",
+                  "  pm.expect(pm.response.json()).to.have.property('error', 'not found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{order_base_url}}/orders/does-not-exist",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders", "does-not-exist"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is success', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 202, 204]);",
+                  "});",
+                  "",
+                  "pm.test('cancel response is acceptable', function () {",
+                  "  if (pm.response.text()) {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j).to.have.property('status');",
+                  "    pm.expect(String(j.status).toLowerCase()).to.eql('cancelled');",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{order_base_url}}/orders/{{order_id}}/cancel",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders", "{{order_id}}", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Get Cancelled Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('order is cancelled', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(String(j.Status || j.status).toLowerCase()).to.eql('cancelled');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{order_base_url}}/orders/{{order_id}}",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders", "{{order_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Order - Missing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 404', function () {",
+                  "  pm.expect(pm.response.code).to.eql(404);",
+                  "});",
+                  "",
+                  "pm.test('error is order does not exist', function () {",
+                  "  pm.expect(pm.response.json()).to.have.property('error', 'order does not exist');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{order_base_url}}/orders/does-not-exist/cancel",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders", "does-not-exist", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Create Timed Order (Authorized)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('timed_idem_key')) {",
+                  "  pm.collectionVariables.set('timed_idem_key', `timed-${Date.now()}-${Math.random().toString(16).slice(2)}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 or 201', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('timed order is authorized', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('Status', 'Authorized');",
+                  "  pm.collectionVariables.set('timed_order_id', j.ID);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{timed_idem_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": \"cust-123\",\n  \"item_name\": \"Keyboard\",\n  \"amount\": 4999\n}"
+            },
+            "url": {
+              "raw": "{{order_base_url}}/orders",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders"]
+            }
+          }
+        },
+        {
+          "name": "Get Timed Order After 6 Seconds",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const start = Date.now();",
+                  "while (Date.now() - start < 6100) {}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('timed order is no longer pending after 5 seconds', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('ID', pm.collectionVariables.get('timed_order_id'));",
+                  "  pm.expect(j.Status).to.not.eql('Pending');",
+                  "  pm.expect(j.Status).to.be.oneOf(['Authorized', 'Paid', 'Failed', 'Cancelled']);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{order_base_url}}/orders/{{timed_order_id}}",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders", "{{timed_order_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Timed Order After 6 Seconds",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const start = Date.now();",
+                  "while (Date.now() - start < 6100) {}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 409', function () {",
+                  "  pm.expect(pm.response.code).to.eql(409);",
+                  "});",
+                  "",
+                  "pm.test('error is order is not pending', function () {",
+                  "  pm.expect(pm.response.json()).to.have.property('error', 'order is not pending');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{order_base_url}}/orders/{{timed_order_id}}/cancel",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders", "{{timed_order_id}}", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Create Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('payment response has authorized status and transaction id', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('status', 'Authorized');",
+                  "  pm.expect(j).to.have.property('transaction_id');",
+                  "  pm.expect(j.transaction_id).to.not.eql('');",
+                  "  pm.collectionVariables.set('transaction_id', j.transaction_id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": \"{{payment_order_id}}\",\n  \"amount\": 4999\n}"
+            },
+            "url": {
+              "raw": "{{payment_base_url}}/payments",
+              "host": ["{{payment_base_url}}"],
+              "path": ["payments"]
+            }
+          }
+        },
+        {
+          "name": "Get Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('payment has expected structure', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('ID');",
+                  "  // pm.expect(j).to.have.property('TransactionID', pm.collectionVariables.get('transaction_id'));",
+                  "  pm.expect(j).to.have.property('Amount', 4999);",
+                  "  pm.expect(j).to.have.property('Status', 'Authorized');",
+                  "  pm.expect(j).to.have.property('OrderID');",
+                  "});",
+                  "",
+                  "pm.test('payment order id is usable', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect([pm.collectionVariables.get('payment_order_id'), 'null', null]).to.include(j.OrderID);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{payment_base_url}}/payments/{{payment_order_id}}",
+              "host": ["{{payment_base_url}}"],
+              "path": ["payments", "{{payment_order_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Payment - Declined",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('declined_payment_order_id')) {",
+                  "  pm.collectionVariables.set('declined_payment_order_id', `declined-order-${Date.now()}`);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('payment is declined', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('status', 'Declined');",
+                  "  pm.expect(j).to.have.property('transaction_id');",
+                  "  pm.collectionVariables.set('declined_payment_tx_id', j.transaction_id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": \"{{declined_payment_order_id}}\",\n  \"amount\": 100001\n}"
+            },
+            "url": {
+              "raw": "{{payment_base_url}}/payments",
+              "host": ["{{payment_base_url}}"],
+              "path": ["payments"]
+            }
+          }
+        },
+        {
+          "name": "Get Declined Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('declined payment matches expected fields', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('OrderID', pm.collectionVariables.get('declined_payment_order_id'));",
+                  "  pm.expect(j).to.have.property('TransactionID', pm.collectionVariables.get('declined_payment_tx_id'));",
+                  "  pm.expect(j).to.have.property('Amount', 100001);",
+                  "  pm.expect(j).to.have.property('Status', 'Declined');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{payment_base_url}}/payments/{{declined_payment_order_id}}",
+              "host": ["{{payment_base_url}}"],
+              "path": ["payments", "{{declined_payment_order_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Payment - Invalid OrderID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () {",
+                  "  pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "",
+                  "pm.test('error is order id is empty', function () {",
+                  "  pm.expect(pm.response.json()).to.have.property('error', 'order id is empty');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": \"\",\n  \"amount\": 4999\n}"
+            },
+            "url": {
+              "raw": "{{payment_base_url}}/payments",
+              "host": ["{{payment_base_url}}"],
+              "path": ["payments"]
+            }
+          }
+        },
+        {
+          "name": "Create Payment - Invalid Amount",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () {",
+                  "  pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "",
+                  "pm.test('error is amount must be > 0', function () {",
+                  "  pm.expect(pm.response.json()).to.have.property('error', 'amount must be > 0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": \"{{payment_order_id}}\",\n  \"amount\": 0\n}"
+            },
+            "url": {
+              "raw": "{{payment_base_url}}/payments",
+              "host": ["{{payment_base_url}}"],
+              "path": ["payments"]
+            }
+          }
+        },
+        {
+          "name": "Create Payment - Malformed JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () {",
+                  "  pm.expect(pm.response.code).to.eql(400);",
+                  "});",
+                  "",
+                  "pm.test('error exists', function () {",
+                  "  pm.expect(pm.response.json()).to.have.property('error');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"order_id\":\"abc\","
+            },
+            "url": {
+              "raw": "{{payment_base_url}}/payments",
+              "host": ["{{payment_base_url}}"],
+              "path": ["payments"]
+            }
+          }
+        },
+        {
+          "name": "Get Payment - Missing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 404', function () {",
+                  "  pm.expect(pm.response.code).to.eql(404);",
+                  "});",
+                  "",
+                  "pm.test('error is not found', function () {",
+                  "  pm.expect(pm.response.json()).to.have.property('error', 'not found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{payment_base_url}}/payments/does-not-exist",
+              "host": ["{{payment_base_url}}"],
+              "path": ["payments", "does-not-exist"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

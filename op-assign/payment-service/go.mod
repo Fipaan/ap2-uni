@@ -4,15 +4,15 @@ go 1.25.5
 
 replace github.com/fipaan/ap2-uni/op-assign/payment-service/internal/transport/http/handler => ./internal/transport/http/handler
 
-replace github.com/fipaan/ap2-uni/op-assign/common => ../common
+replace github.com/fipaan/ap2-uni/op-assign/config => ../config
 
 replace github.com/fipaan/ap2-uni/op-assign/payment-service/internal/app => ./internal/app
 
 require (
-	github.com/fipaan/ap2-uni/op-assign/common v0.0.0-00010101000000-000000000000
+	github.com/fipaan/ap2-uni/op-assign/config v0.0.0-00010101000000-000000000000
 	github.com/gin-gonic/gin v1.12.0
 	github.com/google/uuid v1.6.0
-	github.com/lib/pq v1.12.3
+	github.com/lib/pq v1.12.1
 )
 
 require (

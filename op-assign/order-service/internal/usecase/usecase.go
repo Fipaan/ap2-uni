@@ -50,6 +50,25 @@ func (uc *OrderUsecase) getByIdempotencyKey(ctx context.Context, idempotencyKey 
 	return existing
 }
 
+func (uc *OrderUsecase) processPayment(orderID string) {
+	time.Sleep(5 * time.Second)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	order, err := uc.repo.GetByID(ctx, orderID)
+	if err != nil || order.Status != "Authorized" {
+		return
+	}
+
+	if err == nil && order.Status == "Authorized" {
+		order.Status = "Paid"
+	} else {
+		order.Status = "Failed"
+	}
+	_ = uc.repo.UpdateStatus(ctx, order.ID, order.Status)
+}
+
 func (uc *OrderUsecase) Create(ctx context.Context, customerID, itemName string, amount int64, idempotencyKey string) (order *domain.Order, err error) {
 	err = validateCreate(customerID, itemName, amount)
 	if err != nil { return }
@@ -82,8 +101,10 @@ func (uc *OrderUsecase) Create(ctx context.Context, customerID, itemName string,
 		order.Status = "Failed"
 		err = ErrPaymentNotAvailable
 	} else {
+		go uc.processPayment(order.ID)
+   	
 		if status == "Authorized" {
-			order.Status = "Paid"
+			order.Status = "Authorized"
 		} else {
 			order.Status = "Failed"
 		}
@@ -107,7 +128,8 @@ func (uc *OrderUsecase) Cancel(ctx context.Context, id string) error {
 		return err
 	}
 
-	if order.Status == "Pending" {
+	if order.Status == "Pending" ||
+	  (order.Status == "Authorized" && time.Since(order.CreatedAt) < 5*time.Second) {
 		return uc.repo.UpdateStatus(ctx, id, "Cancelled")
 	}
 	return ErrNotPending

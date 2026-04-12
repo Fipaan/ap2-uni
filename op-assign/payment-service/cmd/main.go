@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/fipaan/ap2-uni/op-assign/payment-service/internal/app"
-	"github.com/fipaan/ap2-uni/op-assign/common"
+	"github.com/fipaan/ap2-uni/op-assign/config"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
@@ -28,12 +28,12 @@ func main() {
 	r.GET("/payments/:order_id", application.Handler.GetPayment)
 
 	s := &http.Server{
-		Addr:           fmt.Sprintf(":%v", common.PaymentPORT),
+		Addr:           fmt.Sprintf(":%v", config.PaymentPORT),
 		Handler:        r,
 		ReadTimeout:    5 * time.Second,
 		WriteTimeout:   5 * time.Second,
 	}
 
-	log.Printf("Payment Service running on %v\n", common.PaymentPORT)
+	log.Printf("Payment Service running on %v\n", config.PaymentPORT)
 	log.Fatal(s.ListenAndServe())
 }

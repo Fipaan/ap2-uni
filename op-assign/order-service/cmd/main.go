@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/fipaan/ap2-uni/op-assign/order-service/internal/app"
-	"github.com/fipaan/ap2-uni/op-assign/common"
+	"github.com/fipaan/ap2-uni/op-assign/config"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
@@ -29,12 +29,12 @@ func main() {
 	r.PATCH("/orders/:id/cancel", app.Handler.CancelOrder)
 
 	s := &http.Server{
-		Addr:           fmt.Sprintf(":%v", common.OrderPORT),
+		Addr:           fmt.Sprintf(":%v", config.OrderPORT),
 		Handler:        r,
 		ReadTimeout:    5 * time.Second,
 		WriteTimeout:   5 * time.Second,
 	}
 
-	log.Printf("Order Service running on :%v\n", common.OrderPORT)
+	log.Printf("Order Service running on :%v\n", config.OrderPORT)
 	log.Fatal(s.ListenAndServe())
 }
