@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	paymentV1 "github.com/fipaan/ap2-uni-op-gen/payment/v1"
+	paymentV1 "github.com/fipaan/ap2-uni-op-gen/op-assign/payment-service/proto/v1"
 	"github.com/fipaan/ap2-uni/op-assign/order-service/internal/usecase"
 
 	"google.golang.org/grpc"
