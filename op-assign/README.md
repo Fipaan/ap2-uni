@@ -6,6 +6,19 @@ This project implements two services:
 
 ---
 
+# How to run?
+
+```sh
+$ git clone https://github.com/Fipaan/ap2-uni.git
+$ cd ap2-uni/op-assign/
+$ go build -o nob
+$ ./nob -clean            # clean all databases
+$ ./nob -l                # list all services
+$ ./nob -s <service-name> # start service
+```
+
+---
+
 # Architecture
 
 ## Top Architecture
