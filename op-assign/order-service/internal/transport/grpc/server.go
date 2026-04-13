@@ -105,6 +105,4 @@ type invalidArgumentError struct{ msg string }
 
 func (e *invalidArgumentError) Error() string { return e.msg }
 
-// helper to make it obvious in this pack; map to grpc status in the final repo
-// if you prefer, replace this with status.Error(codes.InvalidArgument, msg).
 var _ = sql.ErrNoRows
