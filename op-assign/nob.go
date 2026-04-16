@@ -10,8 +10,8 @@ import (
 	"errors"
 	"path/filepath"
 	"encoding/json"
-	fstring "github.com/fipaan/lib.go/string"
-	nob "github.com/fipaan/nob.go"
+	fstring "github.com/Fipaan/lib.go/string"
+	nob "github.com/Fipaan/nob.go"
 )
 
 const (

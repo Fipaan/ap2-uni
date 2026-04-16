@@ -1,4 +1,4 @@
-github.com/fipaan/lib.go v0.1.0 h1:kH+ycmyIwO5H8UV6ZyXu+bxckEiSIUlX80+XXmuNxp4=
-github.com/fipaan/lib.go v0.1.0/go.mod h1:HyLtAQ5wZe4HdbCmwzF18EVI82zaoPBOjMJeOKzmaZU=
-github.com/fipaan/nob.go v0.1.0 h1:fXxVQPfXLGMl9vTalyLTwQLGF6r1wASKZv2LNWTFgwA=
-github.com/fipaan/nob.go v0.1.0/go.mod h1:m5ZnQEgrlrURPWNqpNrvlQ1ydF3kSH48X6yjVdJXh1Y=
+github.com/Fipaan/lib.go v0.1.1 h1:TA+go9zXIK0gvsQl9EmrxrgQd6BCF9gg5psiBBxOjjE=
+github.com/Fipaan/lib.go v0.1.1/go.mod h1:kYgTqczdY1SYLTgfJIZSUxh7fGxtICRB+zltV3j0pvE=
+github.com/Fipaan/nob.go v0.1.1 h1:PxxlLaaGPwlxwLgY98oiQRIB4d3G8FWpNI3jU+bIoG0=
+github.com/Fipaan/nob.go v0.1.1/go.mod h1:Auu33fol6Xw57Qo/ooGkNsbwokxsclcmviSOJSKv/Es=

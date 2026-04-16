@@ -1,10 +1,10 @@
-module github.com/fipaan/ap2-uni/op-assign/order-service
+module github.com/Fipaan/ap2-uni/op-assign/order-service
 
 go 1.25.5
 
 require (
-	github.com/fipaan/ap2-uni-op-gen v0.1.0
-	github.com/fipaan/ap2-uni/op-assign/config v0.0.0-20260412143801-697ccffc5e06
+	github.com/Fipaan/ap2-uni-op-gen v0.1.7
+	github.com/Fipaan/ap2-uni/op-assign/config v0.0.0-20260416093859-ed815ef10551
 	github.com/gin-gonic/gin v1.12.0
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.12.3
@@ -13,7 +13,6 @@ require (
 )
 
 require (
-	github.com/Fipaan/ap2-uni v0.1.11 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.15.0 // indirect
 	github.com/bytedance/sonic/loader v0.5.0 // indirect

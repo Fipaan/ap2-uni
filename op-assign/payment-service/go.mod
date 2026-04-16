@@ -3,8 +3,8 @@ module github.com/Fipaan/ap2-uni/op-assign/payment-service
 go 1.25.5
 
 require (
-	github.com/Fipaan/ap2-uni-op-gen v0.1.5
-	github.com/Fipaan/ap2-uni/op-assign/config v0.0.0-20260412165454-14382994b748
+	github.com/Fipaan/ap2-uni-op-gen v0.1.7
+	github.com/Fipaan/ap2-uni/op-assign/config v0.0.0-20260416093859-ed815ef10551
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.12.1
 	google.golang.org/grpc v1.80.0

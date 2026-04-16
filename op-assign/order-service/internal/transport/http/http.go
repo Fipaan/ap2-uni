@@ -84,7 +84,7 @@ func (h *Handler) GetPaymentsList(c *gin.Context) {
 			errorMsg = err.Error()
 		default:
 			code     = 500
-			errorMsg := "internal error"
+			errorMsg = "internal error"
 			log.Printf("InternalError(%v): %v", code, err.Error())
 		}
 		c.JSON(code, errorMsg)
