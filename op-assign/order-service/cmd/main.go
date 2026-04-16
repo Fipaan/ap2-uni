@@ -12,9 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fipaan/ap2-uni/op-assign/config"
-	"github.com/fipaan/ap2-uni/op-assign/order-service/internal/app"
-	orderV1 "github.com/fipaan/ap2-uni-op-gen/op-assign/order-service/proto/v1"
+	"github.com/Fipaan/ap2-uni/op-assign/config"
+	"github.com/Fipaan/ap2-uni/op-assign/order-service/internal/app"
+	orderV1 "github.com/Fipaan/ap2-uni-op-gen/op-assign/order-service/proto/v1"
 
 	"google.golang.org/grpc"
 	"github.com/gin-gonic/gin"

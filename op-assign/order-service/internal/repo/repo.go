@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/fipaan/ap2-uni/op-assign/order-service/internal/domain"
+	"github.com/Fipaan/ap2-uni/op-assign/order-service/internal/domain"
 )
 
 type OrderRepository struct {

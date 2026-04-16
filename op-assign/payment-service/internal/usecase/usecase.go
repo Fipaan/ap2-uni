@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/fipaan/ap2-uni/op-assign/payment-service/internal/domain"
+	"github.com/Fipaan/ap2-uni/op-assign/payment-service/internal/domain"
 
 	"github.com/google/uuid"
 )

@@ -8,8 +8,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/fipaan/ap2-uni/op-assign/config"
-	"github.com/fipaan/ap2-uni/op-assign/payment-service/internal/app"
+	"github.com/Fipaan/ap2-uni/op-assign/config"
+	"github.com/Fipaan/ap2-uni/op-assign/payment-service/internal/app"
 	paymentV1 "github.com/Fipaan/ap2-uni-op-gen/op-assign/payment-service/proto/v1"
 
 	"google.golang.org/grpc"

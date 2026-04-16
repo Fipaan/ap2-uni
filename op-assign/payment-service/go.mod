@@ -1,10 +1,10 @@
-module github.com/fipaan/ap2-uni/op-assign/payment-service
+module github.com/Fipaan/ap2-uni/op-assign/payment-service
 
 go 1.25.5
 
 require (
 	github.com/Fipaan/ap2-uni-op-gen v0.1.5
-	github.com/fipaan/ap2-uni/op-assign/config v0.0.0-20260412165454-14382994b748
+	github.com/Fipaan/ap2-uni/op-assign/config v0.0.0-20260412165454-14382994b748
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.12.1
 	google.golang.org/grpc v1.80.0
@@ -12,7 +12,6 @@ require (
 )
 
 require (
-	github.com/Fipaan/ap2-uni v0.1.11 // indirect
 	golang.org/x/net v0.51.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.34.0 // indirect

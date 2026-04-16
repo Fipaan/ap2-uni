@@ -6,9 +6,9 @@ import (
 	"time"
 	"database/sql"
 
-	"github.com/fipaan/ap2-uni/op-assign/order-service/internal/domain"
-	paymentV1 "github.com/fipaan/ap2-uni-op-gen/op-assign/payment-service/proto/v1"
-	client "github.com/fipaan/ap2-uni/op-assign/order-service/internal/client/grpc"
+	"github.com/Fipaan/ap2-uni/op-assign/order-service/internal/domain"
+	paymentV1 "github.com/Fipaan/ap2-uni-op-gen/op-assign/payment-service/proto/v1"
+	client "github.com/Fipaan/ap2-uni/op-assign/order-service/internal/client/grpc"
 
 	"github.com/google/uuid"
 )

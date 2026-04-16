@@ -3,7 +3,7 @@ package grpc
 import (
 	"sync"
 
-	orderV1 "github.com/fipaan/ap2-uni-op-gen/op-assign/order-service/proto/v1"
+	orderV1 "github.com/Fipaan/ap2-uni-op-gen/op-assign/order-service/proto/v1"
 )
 
 type Hub struct {

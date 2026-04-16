@@ -3,12 +3,12 @@ package app
 import (
 	"database/sql"
 
-	"github.com/fipaan/ap2-uni/op-assign/config"
-	"github.com/fipaan/ap2-uni/op-assign/order-service/internal/repo"
-	"github.com/fipaan/ap2-uni/op-assign/order-service/internal/usecase"
-	grpcclient "github.com/fipaan/ap2-uni/op-assign/order-service/internal/client/grpc"
-	grpctransport "github.com/fipaan/ap2-uni/op-assign/order-service/internal/transport/grpc"
-	httptransport "github.com/fipaan/ap2-uni/op-assign/order-service/internal/transport/http"
+	"github.com/Fipaan/ap2-uni/op-assign/config"
+	"github.com/Fipaan/ap2-uni/op-assign/order-service/internal/repo"
+	"github.com/Fipaan/ap2-uni/op-assign/order-service/internal/usecase"
+	grpcclient "github.com/Fipaan/ap2-uni/op-assign/order-service/internal/client/grpc"
+	grpctransport "github.com/Fipaan/ap2-uni/op-assign/order-service/internal/transport/grpc"
+	httptransport "github.com/Fipaan/ap2-uni/op-assign/order-service/internal/transport/http"
 )
 
 type App struct {

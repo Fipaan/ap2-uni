@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/fipaan/ap2-uni/op-assign/payment-service/internal/domain"
-	"github.com/fipaan/ap2-uni/op-assign/payment-service/internal/usecase"
+	"github.com/Fipaan/ap2-uni/op-assign/payment-service/internal/domain"
+	"github.com/Fipaan/ap2-uni/op-assign/payment-service/internal/usecase"
 	paymentV1 "github.com/Fipaan/ap2-uni-op-gen/op-assign/payment-service/proto/v1"
 
 	"google.golang.org/grpc/codes"

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"log"
 
-	"github.com/fipaan/ap2-uni/op-assign/order-service/internal/usecase"
+	"github.com/Fipaan/ap2-uni/op-assign/order-service/internal/usecase"
 
 	"github.com/gin-gonic/gin"
 )

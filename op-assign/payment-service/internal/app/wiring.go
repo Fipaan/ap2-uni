@@ -3,9 +3,9 @@ package app
 import (
 	"database/sql"
 
-	"github.com/fipaan/ap2-uni/op-assign/payment-service/internal/repo"
-	"github.com/fipaan/ap2-uni/op-assign/payment-service/internal/usecase"
-	grpctransport "github.com/fipaan/ap2-uni/op-assign/payment-service/internal/transport/grpc"
+	"github.com/Fipaan/ap2-uni/op-assign/payment-service/internal/repo"
+	"github.com/Fipaan/ap2-uni/op-assign/payment-service/internal/usecase"
+	grpctransport "github.com/Fipaan/ap2-uni/op-assign/payment-service/internal/transport/grpc"
 )
 
 type App struct {
