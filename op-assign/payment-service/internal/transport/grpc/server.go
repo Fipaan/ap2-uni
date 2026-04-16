@@ -50,21 +50,20 @@ func (s *Server) ListPayments(ctx context.Context, req *paymentV1.ListPaymentsRe
 }
 
 func toPaymentFull(p *domain.Payment) *paymentV1.PaymentFull {
-	return &paymentV1.PaymentResponse{
+	return &paymentV1.PaymentFull{
 		PaymentId:     p.ID,
 		OrderId:       p.OrderID,
 		TransactionId: p.TransactionID,
 		Amount:        p.Amount,
 		Status:        p.Status,
-		ProcessedAt:   timestamppb.New(time.Now().UTC()),
 	}
 }
 
-func toListPaymentsResponse(ps *[]domain.Payment) *paymentV1.ListPaymentResponse {
-	payments := make([]*paymentV1.PaymentResponse, 0, len(*ps))
+func toListPaymentsResponse(ps *[]domain.Payment) *paymentV1.ListPaymentsResponse {
+	payments := make([]*paymentV1.PaymentFull, 0, len(*ps))
 
 	for i := range *ps {
-		payments = append(payments, toResponse(&(*ps)[i]))
+		payments = append(payments, toPaymentFull(&(*ps)[i]))
 	}
 
 	return &paymentV1.ListPaymentsResponse{

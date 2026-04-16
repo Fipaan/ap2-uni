@@ -56,7 +56,7 @@ func (uc *PaymentUsecase) Process(ctx context.Context, orderID string, amount in
 	return p, err
 }
 
-func (uc *PaymentUsecase) Process(ctx context.Context, status string) (p *[]domain.Payment, err error) {
+func (uc *PaymentUsecase) List(ctx context.Context, status string) (p *[]domain.Payment, err error) {
 	if status == "" {
 		return uc.repo.GetAll(ctx)
 	} else {
