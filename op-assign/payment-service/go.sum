@@ -1,5 +1,7 @@
-github.com/Fipaan/ap2-uni-op-gen v0.1.6 h1:B9H32mA8jT0txxJg2F2vFoJX+ZD86CyINc1V0j5X9cI=
-github.com/Fipaan/ap2-uni-op-gen v0.1.6/go.mod h1:VKhU8YvE/PiZKqXP72gbOBNl+F50IMVLXRwbbQaBev0=
+github.com/Fipaan/ap2-uni v0.1.11 h1:47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=
+github.com/Fipaan/ap2-uni v0.1.11/go.mod h1:XuFBuw++dNVDMWsnub08bC7F2gX1TToaLUG09KsRgYI=
+github.com/Fipaan/ap2-uni-op-gen v0.1.5 h1:uHwBK9duhhdXFCV/J+X+EtrVl+Jh7AtvSMNI2prblGQ=
+github.com/Fipaan/ap2-uni-op-gen v0.1.5/go.mod h1:VKhU8YvE/PiZKqXP72gbOBNl+F50IMVLXRwbbQaBev0=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/fipaan/ap2-uni/op-assign/config v0.0.0-20260412165454-14382994b748 h1:QoX555Q2hcHTMIirKlwrtMfOpse57MS+3bWSOnlB4+0=
