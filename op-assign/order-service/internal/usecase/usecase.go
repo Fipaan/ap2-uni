@@ -7,6 +7,7 @@ import (
 	"database/sql"
 
 	"github.com/fipaan/ap2-uni/op-assign/order-service/internal/domain"
+	paymentdomain "github.com/fipaan/ap2-uni/op-assign/payment-service/internal/client/grpc"
 	client "github.com/fipaan/ap2-uni/op-assign/order-service/internal/client/grpc"
 
 	"github.com/google/uuid"
@@ -23,6 +24,7 @@ var ErrPaymentNotAvailable = client.ErrPaymentNotAvailable
 type OrderRepository interface {
 	Create(ctx context.Context, o *domain.Order) error
 	GetByID(ctx context.Context, id string) (*domain.Order, error)
+	ListPayments(ctx context.Context, status string) (*[]paymentdomain.Payment, error)
 	UpdateStatus(ctx context.Context, id string, status string) error
 	GetByIdempotencyKey(ctx context.Context, key string) (*domain.Order, error)
 }
@@ -117,6 +119,14 @@ func (uc *OrderUsecase) Create(ctx context.Context, customerID, itemName string,
 
 func (uc *OrderUsecase) Get(ctx context.Context, id string) (*domain.Order, error) {
 	return uc.repo.GetByID(ctx, id)
+}
+
+func (uc *OrderUsecase) ListPayments(ctx context.Context, status string) (*[]paymentdomain.Payment, error) {
+	payments, err := uc.payment.ListPayments(ctx, status)
+	if err != nil {
+		err = ErrPaymentNotAvailable
+	}
+	return payments, err
 }
 
 func (uc *OrderUsecase) Cancel(ctx context.Context, id string) error {

@@ -42,6 +42,7 @@ func main() {
 	r := gin.Default()
 	r.POST("/orders", App.Handler.CreateOrder)
 	r.GET("/orders/:id", App.Handler.GetOrder)
+	r.GET("/orders/list/:status", App.Handler.GetPaymentsList)
 	r.PATCH("/orders/:id/cancel", App.Handler.CancelOrder)
 
 	grpcLis, err := net.Listen("tcp", config.OrderGRPCAddr())

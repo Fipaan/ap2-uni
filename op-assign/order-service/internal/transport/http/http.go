@@ -71,6 +71,29 @@ func (h *Handler) GetOrder(c *gin.Context) {
 	c.JSON(200, order)
 }
 
+func (h *Handler) GetPaymentsList(c *gin.Context) {
+	status := c.Param("status")
+
+	payments, err := h.uc.ListPayments(c, status)
+	if err != nil {
+		code := 500
+		var errorMsg string
+		switch {
+		case errors.Is(err, usecase.ErrPaymentNotAvailable):
+			code     = 503
+			errorMsg = err.Error()
+		default:
+			code     = 500
+			errorMsg := "internal error"
+			log.Printf("InternalError(%v): %v", code, err.Error())
+		}
+		c.JSON(code, errorMsg)
+		return
+	}
+	
+	c.JSON(200, payments)
+}
+
 func (h *Handler) CancelOrder(c *gin.Context) {
 	id := c.Param("id")
 

@@ -15,6 +15,8 @@ var ErrInvalidAmount  = errors.New("amount must be > 0")
 type PaymentRepository interface {
 	Create(ctx context.Context, p *domain.Payment) error
 	GetByOrderID(ctx context.Context, orderID string) (*domain.Payment, error)
+	GetAll(ctx context.Context) (*[]domain.Payment, error)
+	GetAllByStatus(ctx context.Context, status string) (*[]domain.Payment, error)
 }
 
 type PaymentUsecase struct {
@@ -52,6 +54,14 @@ func (uc *PaymentUsecase) Process(ctx context.Context, orderID string, amount in
 
 	err = uc.repo.Create(ctx, p)
 	return p, err
+}
+
+func (uc *PaymentUsecase) Process(ctx context.Context, status string) (p *[]domain.Payment, err error) {
+	if status == "" {
+		return uc.repo.GetAll(ctx)
+	} else {
+		return uc.repo.GetAllByStatus(ctx, status)
+	}
 }
 
 func (uc *PaymentUsecase) Get(ctx context.Context, orderID string) (*domain.Payment, error) {

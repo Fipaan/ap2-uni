@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/fipaan/ap2-uni-op/op-assign/payment-service/domain"
 	paymentV1 "github.com/fipaan/ap2-uni-op-gen/op-assign/payment-service/proto/v1"
 
 	"google.golang.org/grpc"
@@ -18,6 +19,7 @@ var ErrPaymentNotAvailable = errors.New("payment service is not available")
 
 type PaymentClient interface {
 	Pay(ctx context.Context, orderID string, amount int64) (string, error)
+	ListPayments(ctx context.Context, status string) (*[]domain.Payment, error)
 }
 
 type paymentClient struct {
@@ -67,4 +69,31 @@ func (c *paymentClient) Pay(ctx context.Context, orderID string, amount int64) (
     }
 
 	return resp.GetStatus(), nil
+}
+
+func (c *paymentClient) ListPayments(ctx context.Context, status string) (*[]domain.Payment, error) {
+	resp, err := c.client.ListPayments(ctx, &paymentV1.ListPaymentsRequest{
+		Status: status,
+	})
+
+    if err != nil {
+		st, ok := status.FromError(err)
+		if ok && (st.Code() == codes.Unavailable || st.Code() == codes.DeadlineExceeded) {
+			return nil, ErrPaymentNotAvailable
+		}
+		return "", fmt.Errorf("payment rpc failed: %w", err)
+    }
+
+	payments := make([]domain.Payment, 0, len(resp.GetPayments()))
+	for _, p := range resp.GetPayments() {
+		payments = append(payments, domain.Payment{
+			ID:            p.GetPaymentId(),
+			OrderID:       p.GetOrderId(),
+			TransactionID: p.GetTransactionId(),
+			Amount:        p.GetAmount(),
+			Status:        p.GetStatus(),
+		})
+	}
+
+	return payments, nil
 }
