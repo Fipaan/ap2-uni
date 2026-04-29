@@ -30,12 +30,12 @@ func NewPaymentClient(url string) (PaymentClient, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	conn, err := grpc.DialContext(
-		ctx,
-		url,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
-	)
+   conn, err := grpc.DialContext(
+           ctx,
+           url,
+           grpc.WithTransportCredentials(insecure.NewCredentials()),
+   )
+
 	if err != nil {
 		return nil, err
 	}
