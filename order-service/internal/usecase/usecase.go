@@ -87,6 +87,7 @@ func (uc *OrderUsecase) Create(ctx context.Context, customerID, customerEmail, i
 	order = &domain.Order{
 		ID:             uuid.New().String(),
 		CustomerID:     customerID,
+		CustomerEmail:  customerEmail,
 		ItemName:       itemName,
 		Amount:         amount,
 		Status:         "Pending",
