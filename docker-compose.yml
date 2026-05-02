@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # order-service:
+  #   build:
+  #     context: .
+  #     dockerfile: order-service/Dockerfile
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     PGPASSWORD: password
+  #     ORDER_PORT: "8000"
+  #     ORDER_GRPC_ADDR: "0.0.0.0:9091"
+  #     PAYMENT_GRPC_ADDR: "payment-service:9090"
+  #     ORDER_DB_DSN: "postgres://postgres:password@postgres:5432/order_db?sslmode=disable"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  # 
+  # payment-service:
+  #   build:
+  #     context: .
+  #     dockerfile: payment-service/Dockerfile
+  #   environment:
+  #     PGPASSWORD: password
+  #     PAYMENT_GRPC_ADDR: "0.0.0.0:9090"
+  #     PAYMENT_DB_DSN: "postgres://postgres:password@postgres:5432/payment_db?sslmode=disable"
+  #     RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     rabbitmq:
+  #       condition: service_healthy
+
+  notify-service:
+    build:
+      context: .
+      dockerfile: notify-service/Dockerfile
+    environment:
+      PGPASSWORD: password
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
+      NOTIFY_DB_DSN: "postgres://postgres:password@postgres:5432/notify_db?sslmode=disable"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

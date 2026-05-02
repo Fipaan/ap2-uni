@@ -57,7 +57,7 @@ func cleanService(cmd *nob.Cmd, service Service) bool {
 	// re-initialize database
 	prepareService(cmd, service)
 	dbName := service.DB_ActualName()
-	cmd.Push("-c", fmt.Sprintf("DROP   DATABASE %v;", dbName))
+	cmd.Push("-c", fmt.Sprintf("DROP   DATABASE IF EXISTS %v;", dbName))
 	cmd.Push("-c", fmt.Sprintf("CREATE DATABASE %v;", dbName))
 	cmd.Push("-c", "\\q")
 	if !cmd.Run() { return false }
@@ -145,10 +145,17 @@ func preClean(cmd *nob.Cmd) (err error) {
 	return
 }
 
+func tryEnv(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}
+
 var SERVICES = []Service{
-	Service{Name: "order",   DB_User: "postgres"},
-	Service{Name: "payment", DB_User: "postgres"},
-	Service{Name: "notify",  DB_User: "postgres"},
+	Service{Name: "order",   DB_User: "postgres", DB_Host: tryEnv("DB_HOST", "localhost")},
+	Service{Name: "payment", DB_User: "postgres", DB_Host: tryEnv("DB_HOST", "localhost")},
+	Service{Name: "notify",  DB_User: "postgres", DB_Host: tryEnv("DB_HOST", "localhost")},
 }
 
 func listServices() {
@@ -166,10 +173,12 @@ func main() {
 	var service string
 	var isList  bool 
 	var isCurl  bool 
-	flag.BoolVar  (&isClean, "clean", false, "cleans databases")
-	flag.StringVar(&service, "s",     "",    "start service")
-	flag.BoolVar  (&isList,  "l",     false, "list of all services")
-	flag.BoolVar  (&isCurl,  "curl",  false, "run curl test")
+	var cleanServiceName string                    
+	flag.BoolVar  (&isClean,          "clean",   false, "cleans databases")
+	flag.StringVar(&service,          "s",       "",    "start service")
+	flag.BoolVar  (&isList,           "l",       false, "list of all services")
+	flag.BoolVar  (&isCurl,           "curl",    false, "run curl test")
+	flag.StringVar(&cleanServiceName, "clean-s", "",    "clean specific service")
 	flag.Parse()
 	cmd := nob.CmdInit()
 	if isList {
@@ -201,6 +210,16 @@ func main() {
 			os.Exit(1)
 		}
 		return
+	}
+	if cleanServiceName != "" {
+	    for i := range SERVICES {
+	        if SERVICES[i].Name == cleanServiceName {
+	            if !cleanService(cmd, SERVICES[i]) {
+	                os.Exit(1)
+	            }
+	            break
+	        }
+	    }
 	}
 	if isClean {
 		if !cleanServices(cmd) {
