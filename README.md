@@ -1,73 +1,140 @@
-# Project
+This project implements three microservices connected via gRPC and RabbitMQ, following Event-Driven Architecture (EDA) principles.
 
-This project implements two services:
-* Order Service
-* Payment Service
+```
+[Client] --HTTP--> [Order Service] --gRPC--> [Payment Service] --AMQP--> [RabbitMQ] --AMQP--> [Notification Service]
+```
 
 ---
 
-# How to run?
+# Services
 
+| Service              | Role |
+|----------------------|------|
+| **Order Service**    | Accepts orders via HTTP, calls Payment Service via gRPC, streams status updates |
+| **Payment Service**  | Processes payments via gRPC, publishes events to RabbitMQ |
+| **Notify Service**   | Consumes payment events from RabbitMQ, sends email notifications |
+
+---
+
+# How to Run
+
+### Local (requires PostgreSQL + RabbitMQ running)
 ```sh
-$ git clone https://github.com/Fipaan/ap2-uni.git
-$ cd ap2-uni/
-$ go build -o nob
-$ ./nob -clean            # clean all databases
-$ ./nob -l                # list all services
-$ ./nob -s <service-name> # start service
+git clone https://github.com/Fipaan/ap2-uni.git
+cd ap2-uni/
+go build -o nob
+./nob -clean            # initialize all databases
+./nob -l                # list all services
+./nob -s <service-name> # start a service (order | payment | notify)
 ```
+
+### Docker (recommended)
+```sh
+docker compose up --build
+```
+
+All services, databases, and RabbitMQ are orchestrated automatically. Databases are initialized on first start.
 
 ---
 
 # Architecture
 
-## Top Architecture
+## Event Flow
 
-Because services are independent they have small common layer to not accidently collide with each other (like services' port). But basically, it just two compound structures that doesn't share code. Common configuration module sets-up environment variables, and fallbacks to default ones if necessary.
+```
+POST /orders
+    -> Order Service (HTTP)
+        -> Payment Service (gRPC: ProcessPayment)
+            -> payments DB
+            -> RabbitMQ publish: payments.events / payment.completed
+                -> Notification Service (AMQP consumer)
+                    -> log: [Notify] Sent email to ...
+```
 
 ## Service Architecture
 
+Each service follows Clean Architecture:
+
 ```
-Each service uses Clean Architecture with separation of concerns.
-├── cmd/ - service entry
-├── internal/ - inner code, that used by service
-│   ├── app/ - wiring layer, that combines everything in coherent structure
-│   ├── client/ - code, that interacts with other services
-│   ├── domain/ - data structures, that used across service
-│   ├── repo/ - direct database interaction
-│   ├── transport/ - transport layer for different kinds of communication
-│   │   ├── grpc/ - actual interaction between services using gRPC for fast communication
-│   │   └── http/ - user exposed HTTP communication
-│   ├── usecase/ - verifies data and performs actions on database
-│   └── proto/ (v1/) - gRPC `.proto` files that implement services, message structures and etc.
-└── migrations/ - database files that define database entities and upgrades them on new changes
+├── cmd/                  - entry point
+├── internal/
+│   ├── app/              - wiring (dependency injection)
+│   ├── domain/           - data structures
+│   ├── repo/             - database access
+│   ├── usecase/          - business logic and validation
+│   ├── transport/
+│   │   ├── grpc/         - gRPC server/client
+│   │   └── http/         - HTTP handlers (order-service only)
+│   └── infrastructure/
+│       └── mq/           - RabbitMQ producer/consumer
+├── migrations/           - SQL migration files
+└── proto/v1/             - protobuf definitions
 ```
+
+## Infrastructure
+
+| Component             | Technology        |
+|-----------------------|-------------------|
+| Order ↔ Payment       | gRPC              |
+| Payment → Notify      | RabbitMQ (AMQP)   |
+| Order status updates  | PostgreSQL LISTEN/NOTIFY + gRPC streaming |
+| Databases             | PostgreSQL (separate DB per service) |
+| Containerization      | Docker Compose    |
 
 ---
 
-# Bounded Context
+# Reliability & Delivery Guarantees
 
-Even if codebases are separated, we still have some boundaries that allows us to interact between services.
-For example, `order-service` depends on `payment-service`, but because we expect them to be independent,
-we can't use `payment-service` directly, instead we are sending gRPC request that tries to retrieve data
-from that service, in result we still get data, but if service is not available, we are trying to handle it
-already on our side (e.g. send appropriate error).
+| Concern           | Implementation |
+|-------------------|---------------|
+| **Manual ACKs**   | Notification Service ACKs only after successful processing |
+| **Durable queues**| Queue and exchange declared with `durable=true` |
+| **Persistent messages** | `DeliveryMode=Persistent` on all published messages |
+| **Publisher confirms** | Payment Service waits for broker ACK before returning |
+| **Idempotency**   | Notification Service deduplicates by `event_id` (in-memory store) |
+| **DLQ**           | Messages failing after 3 retries are routed to `payment.completed.dlq` |
+| **Graceful shutdown** | All services handle `SIGINT`/`SIGTERM` via `os/signal` |
+
+---
+
+# Idempotency Strategy
+
+**Order Service**: deduplicates via `Idempotency-Key` HTTP header. Enforced both in application logic and via a unique DB index on `idempotency_key`.
+
+**Notification Service**: deduplicates via `event_id` field in the event payload. On receipt, checks an in-memory store before processing. If already seen, ACKs and skips.
+
+---
+
+# ACK Logic
+
+The Notification Service uses **manual acknowledgment**:
+1. Message is received from RabbitMQ with `auto-ack=false`.
+2. Message is deserialized and checked for duplicates.
+3. Notifier (`EmailNotifier.Send`) is called.
+4. **Only on success**: `msg.Ack(false)` is called.
+5. On failure: retry counter is incremented and message is re-published. After 3 retries, moved to DLQ.
+
+This guarantees **at-least-once delivery** — if the service crashes mid-processing, the unACKed message is redelivered by RabbitMQ.
 
 ---
 
 # Failure Handling
 
-We are working with HTTP, so we need to handle errors appropriately. I'm utilizng error messages and error codes:
-* 400 - bad input data
-* 404 - not found
-* 409 - data conflict
-* 500 - internal errors (to not leak any sensitive data)
-* 503 - service is not available (when interacting with different services)
-* ...
+HTTP error codes (Order Service):
 
-That way you can clearly identify root of the problem, and take specific action if needed, for example, use another service.
+| Code  | Meaning |
+|-------|---------|
+| `400` | Invalid input |
+| `404` | Not found |
+| `409` | Conflict (e.g. cancel non-pending order) |
+| `503` | Downstream service unavailable |
+| `500` | Internal error |
 
-Also gRPC exposes constant errors and doesn't rely on such kind of errors. It uses:
-* codes.Unavailable      - service is currently unavailable
-* codes.DeadlineExceeded - operation expired before completion
-* ...
+gRPC error codes (Payment Service):
+
+| Code              | Meaning |
+|-------------------|---------|
+| `InvalidArgument` | Bad input |
+| `Unavailable`     | Service unreachable |
+| `DeadlineExceeded`| Timeout |
+| `Internal`        | Unexpected error |
