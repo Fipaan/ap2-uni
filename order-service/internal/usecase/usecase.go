@@ -37,6 +37,10 @@ func NewOrderUsecase(r OrderRepository, p client.PaymentClient) *OrderUsecase {
 	return &OrderUsecase{repo: r, payment: p}
 }
 
+func (uc *OrderUsecase) Close() {
+	uc.payment.Close()
+}
+
 func validateCreate(customerID, itemName string, amount int64) error {
 	if customerID == "" { return ErrInvalidCustomerID }
 	if itemName   == "" { return ErrInvalidItem       }
@@ -70,7 +74,7 @@ func (uc *OrderUsecase) processPayment(orderID string) {
 	_ = uc.repo.UpdateStatus(ctx, order.ID, order.Status)
 }
 
-func (uc *OrderUsecase) Create(ctx context.Context, customerID, itemName string, amount int64, idempotencyKey string) (order *domain.Order, err error) {
+func (uc *OrderUsecase) Create(ctx context.Context, customerID, customerEmail, itemName string, amount int64, idempotencyKey string) (order *domain.Order, err error) {
 	err = validateCreate(customerID, itemName, amount)
 	if err != nil { return }
 
@@ -97,7 +101,7 @@ func (uc *OrderUsecase) Create(ctx context.Context, customerID, itemName string,
 		return
 	}
 
-	status, err := uc.payment.Pay(ctx, order.ID, order.Amount)
+	status, err := uc.payment.Pay(ctx, order.ID, order.Amount, customerEmail)
 	if err != nil {
 		order.Status = "Failed"
 		err = ErrPaymentNotAvailable

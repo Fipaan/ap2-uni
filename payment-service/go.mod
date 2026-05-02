@@ -7,6 +7,7 @@ require (
 	github.com/Fipaan/ap2-uni/config v0.0.0-20260427083107-57926aaad77a
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.12.1
+	github.com/rabbitmq/amqp091-go v1.11.0
 	google.golang.org/grpc v1.80.0
 	google.golang.org/protobuf v1.36.11
 )

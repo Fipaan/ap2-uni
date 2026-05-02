@@ -18,6 +18,9 @@ import (
 )
 
 func main() {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+
 	db, err := sql.Open("postgres", config.PaymentDB_DSN())
 	if err != nil {
 		log.Fatal(err)
@@ -37,6 +40,12 @@ func main() {
 		grpc.ChainUnaryInterceptor(loggingUnaryInterceptor),
 	)
 	paymentV1.RegisterPaymentServiceServer(server, App.GRPCServer)
+
+	go func() {
+		<-ctx.Done()
+		server.GracefulStop()
+		App.Close()
+	}()
 
 	log.Printf("Payment gRPC running on %v\n", config.PaymentGRPCAddr())
 	log.Fatal(server.Serve(lis))

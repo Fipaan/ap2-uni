@@ -23,11 +23,10 @@ func NewServer(uc *usecase.PaymentUsecase) *Server {
 }
 
 func (s *Server) ProcessPayment(ctx context.Context, req *paymentV1.PaymentRequest) (*paymentV1.PaymentResponse, error) {
-	p, err := s.uc.Process(ctx, req.GetOrderId(), req.GetAmount())
+	p, err := s.uc.Process(ctx, req.GetOrderId(), req.GetAmount(), req.GetCustomerEmail())
 	if err != nil {
 		return nil, mapUsecaseErr(err)
 	}
-
 	return toResponse(p), nil
 }
 
@@ -73,7 +72,7 @@ func toListPaymentsResponse(ps *[]domain.Payment) *paymentV1.ListPaymentsRespons
 
 func mapUsecaseErr(err error) error {
 	switch err {
-	case usecase.ErrInvalidOrderID, usecase.ErrInvalidAmount:
+	case usecase.ErrInvalidOrderID, usecase.ErrInvalidAmount, usecase.ErrInvalidEmail:
 		return status.Error(codes.InvalidArgument, err.Error())
 	default:
 		return status.Error(codes.Internal, "internal error")

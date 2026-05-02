@@ -56,6 +56,7 @@ func main() {
 	go func() {
         <-ctx.Done()
         grpcServer.GracefulStop()
+		App.Close()
     }()
 
 	go func() {

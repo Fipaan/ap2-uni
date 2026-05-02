@@ -17,11 +17,16 @@ func NewHandler(uc *usecase.OrderUsecase) *Handler {
 	return &Handler{uc: uc}
 }
 
+func (handler *Handler) Close() {
+	handler.uc.Close()
+}
+
 func (h *Handler) CreateOrder(c *gin.Context) {
 	var req struct {
-		CustomerID string `json:"customer_id"`
-		ItemName   string `json:"item_name"`
-		Amount     int64  `json:"amount"`
+		CustomerID 	  string `json:"customer_id"`
+		CustomerEmail string `json:"customer_email"`
+		ItemName      string `json:"item_name"`
+		Amount        int64  `json:"amount"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -32,7 +37,7 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 
 	code := 201
 
-	order, err := h.uc.Create(c, req.CustomerID, req.ItemName, req.Amount, idempotencyKey)
+	order, err := h.uc.Create(c, req.CustomerID, req.CustomerEmail, req.ItemName, req.Amount, idempotencyKey)
 	if errors.Is(err, usecase.ErrNoErrIdempotency) {
 		code = 200
 		err = nil

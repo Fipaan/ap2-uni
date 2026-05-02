@@ -39,3 +39,7 @@ func NewApp(db *sql.DB) (*App, error) {
 		payment:    paymentClient,
 	}, nil
 }
+
+func (app *App) Close() {
+	app.Handler.Close()
+}

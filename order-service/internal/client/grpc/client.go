@@ -17,7 +17,8 @@ import (
 var ErrPaymentNotAvailable = errors.New("payment service is not available")
 
 type PaymentClient interface {
-	Pay(ctx context.Context, orderID string, amount int64) (string, error)
+	Close() error
+	Pay(ctx context.Context, orderID string, amount int64, customerEmail string) (string, error)
 	ListPayments(ctx context.Context, status string) ([]*paymentV1.PaymentFull, error)
 }
 
@@ -53,10 +54,11 @@ func (c *paymentClient) Close() error {
 	return nil
 }
 
-func (c *paymentClient) Pay(ctx context.Context, orderID string, amount int64) (string, error) {
+func (c *paymentClient) Pay(ctx context.Context, orderID string, amount int64, customerEmail string) (string, error) {
 	resp, err := c.client.ProcessPayment(ctx, &paymentV1.PaymentRequest{
 		OrderId: orderID,
 		Amount:  amount,
+		CustomerEmail: customerEmail,
 	})
 
     if err != nil {

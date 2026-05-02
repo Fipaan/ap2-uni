@@ -3,5 +3,6 @@ CREATE TABLE payments (
     order_id TEXT NOT NULL,
     transaction_id TEXT NOT NULL,
     amount BIGINT NOT NULL,
-    status TEXT NOT NULL
+    status TEXT NOT NULL,
+    customer_email TEXT NOT NULL
 );

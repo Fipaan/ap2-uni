@@ -16,27 +16,27 @@ func NewPaymentRepository(db *sql.DB) *PaymentRepository {
 
 func (r *PaymentRepository) Create(ctx context.Context, p *domain.Payment) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO payments (id, order_id, transaction_id, amount, status)
-		 VALUES ($1,$2,$3,$4,$5)`,
-		p.ID, p.OrderID, p.TransactionID, p.Amount, p.Status,
+		`INSERT INTO payments (id, order_id, transaction_id, amount, status, customer_email)
+		 VALUES ($1,$2,$3,$4,$5,$6)`,
+		p.ID, p.OrderID, p.TransactionID, p.Amount, p.Status, p.CustomerEmail,
 	)
 	return err
 }
 
 func (r *PaymentRepository) GetByOrderID(ctx context.Context, orderID string) (*domain.Payment, error) {
 	row := r.db.QueryRowContext(ctx,
-		`SELECT id, order_id, transaction_id, amount, status FROM payments WHERE order_id=$1`,
+		`SELECT id, order_id, transaction_id, amount, status, customer_email FROM payments WHERE order_id=$1`,
 		orderID,
 	)
 
 	var p domain.Payment
-	err := row.Scan(&p.ID, &p.OrderID, &p.TransactionID, &p.Amount, &p.Status)
+	err := row.Scan(&p.ID, &p.OrderID, &p.TransactionID, &p.Amount, &p.Status, &p.CustomerEmail)
 	return &p, err
 }
 
 func (r *PaymentRepository) GetAll(ctx context.Context) (*[]domain.Payment, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT id, order_id, transaction_id, amount, status FROM payments`,
+		`SELECT id, order_id, transaction_id, amount, status, customer_email FROM payments`,
 	)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func (r *PaymentRepository) GetAll(ctx context.Context) (*[]domain.Payment, erro
 
 	for rows.Next() {
 		var p domain.Payment
-		if err := rows.Scan(&p.ID, &p.OrderID, &p.TransactionID, &p.Amount, &p.Status); err != nil {
+		if err := rows.Scan(&p.ID, &p.OrderID, &p.TransactionID, &p.Amount, &p.Status, &p.CustomerEmail); err != nil {
 			return nil, err
 		}
 		payments = append(payments, p)
@@ -62,7 +62,7 @@ func (r *PaymentRepository) GetAll(ctx context.Context) (*[]domain.Payment, erro
 
 func (r *PaymentRepository) GetAllByStatus(ctx context.Context, status string) (*[]domain.Payment, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT id, order_id, transaction_id, amount, status FROM payments WHERE status=$1`,
+		`SELECT id, order_id, transaction_id, amount, status, customer_email FROM payments WHERE status=$1`,
 		status,
 	)
 	if err != nil {
@@ -74,7 +74,7 @@ func (r *PaymentRepository) GetAllByStatus(ctx context.Context, status string) (
 
 	for rows.Next() {
 		var p domain.Payment
-		if err := rows.Scan(&p.ID, &p.OrderID, &p.TransactionID, &p.Amount, &p.Status); err != nil {
+		if err := rows.Scan(&p.ID, &p.OrderID, &p.TransactionID, &p.Amount, &p.Status, &p.CustomerEmail); err != nil {
 			return nil, err
 		}
 		payments = append(payments, p)

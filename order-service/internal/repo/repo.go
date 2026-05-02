@@ -17,34 +17,30 @@ func NewOrderRepository(db *sql.DB) *OrderRepository {
 
 func (r *OrderRepository) Create(ctx context.Context, o *domain.Order) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO orders (id, customer_id, item_name, amount, status, created_at, idempotency_key)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-		o.ID, o.CustomerID, o.ItemName, o.Amount, o.Status, o.CreatedAt, o.IdempotencyKey,
+		`INSERT INTO orders (id, customer_id, customer_email, item_name, amount, status, created_at, idempotency_key)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+		o.ID, o.CustomerID, o.CustomerEmail, o.ItemName, o.Amount, o.Status, o.CreatedAt, o.IdempotencyKey,
 	)
 	return err
 }
 
 func (r *OrderRepository) GetByID(ctx context.Context, id string) (*domain.Order, error) {
 	row := r.db.QueryRowContext(ctx,
-		`SELECT id, customer_id, item_name, amount, status, created_at, idempotency_key
-		 FROM orders WHERE id=$1`,
-		id,
-	)
+		`SELECT id, customer_id, customer_email, item_name, amount, status, created_at, idempotency_key
+		 FROM orders WHERE id=$1`, id)
 
 	var o domain.Order
-	err := row.Scan(&o.ID, &o.CustomerID, &o.ItemName, &o.Amount, &o.Status, &o.CreatedAt, &o.IdempotencyKey)
+	err := row.Scan(&o.ID, &o.CustomerID, &o.CustomerEmail, &o.ItemName, &o.Amount, &o.Status, &o.CreatedAt, &o.IdempotencyKey)
 	return &o, err
 }
 
 func (r *OrderRepository) GetByIdempotencyKey(ctx context.Context, key string) (*domain.Order, error) {
 	row := r.db.QueryRowContext(ctx,
-		`SELECT id, customer_id, item_name, amount, status, created_at, idempotency_key
-		 FROM orders WHERE idempotency_key=$1`,
-		key,
-	)
+		`SELECT id, customer_id, customer_email, item_name, amount, status, created_at, idempotency_key
+		 FROM orders WHERE idempotency_key=$1`, key)
 
 	var o domain.Order
-	err := row.Scan(&o.ID, &o.CustomerID, &o.ItemName, &o.Amount, &o.Status, &o.CreatedAt, &o.IdempotencyKey)
+	err := row.Scan(&o.ID, &o.CustomerID, &o.CustomerEmail, &o.ItemName, &o.Amount, &o.Status, &o.CreatedAt, &o.IdempotencyKey)
 	return &o, err
 }
 
