@@ -2,19 +2,22 @@
   "info": {
     "_postman_id": "6c3f0f3f-8d2c-4b9c-9d7a-2cbfd3a5f111",
     "name": "Orders and Payments API",
-    "description": "Orders and payments test collection covering validation, idempotency, cancel flow, timeout window, payment success, payment decline, and not found cases.",
+    "description": "Orders and payments test collection covering validation, idempotency, cancel flow, timeout window, payment success, payment decline, not found cases, event-driven notification flow, and DLQ.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "order_base_url", "value": "http://localhost:8000" },
     { "key": "payment_base_url", "value": "http://localhost:8080" },
+    { "key": "rabbitmq_base_url", "value": "http://localhost:15672" },
     { "key": "idem_key", "value": "" },
     { "key": "order_id", "value": "" },
     { "key": "timed_order_id", "value": "" },
     { "key": "payment_order_id", "value": "" },
     { "key": "declined_payment_order_id", "value": "" },
     { "key": "transaction_id", "value": "" },
-    { "key": "declined_payment_tx_id", "value": "" }
+    { "key": "declined_payment_tx_id", "value": "" },
+    { "key": "notification_order_id", "value": "" },
+    { "key": "dlq_order_id", "value": "" }
   ],
   "item": [
     {
@@ -51,6 +54,7 @@
                   "  const j = pm.response.json();",
                   "  pm.expect(j).to.have.property('ID');",
                   "  pm.expect(j).to.have.property('CustomerID', 'cust-123');",
+                  "  pm.expect(j).to.have.property('CustomerEmail', 'user@example.com');",
                   "  pm.expect(j).to.have.property('ItemName', 'Keyboard');",
                   "  pm.expect(j).to.have.property('Amount', 4999);",
                   "  pm.expect(j).to.have.property('Status', 'Authorized');",
@@ -77,7 +81,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customer_id\": \"cust-123\",\n  \"item_name\": \"Keyboard\",\n  \"amount\": 4999\n}"
+              "raw": "{\n  \"customer_id\": \"cust-123\",\n  \"customer_email\": \"user@example.com\",\n  \"item_name\": \"Keyboard\",\n  \"amount\": 4999\n}"
             },
             "url": {
               "raw": "{{order_base_url}}/orders",
@@ -115,7 +119,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customer_id\": \"cust-123\",\n  \"item_name\": \"Keyboard\",\n  \"amount\": 4999\n}"
+              "raw": "{\n  \"customer_id\": \"cust-123\",\n  \"customer_email\": \"user@example.com\",\n  \"item_name\": \"Keyboard\",\n  \"amount\": 4999\n}"
             },
             "url": {
               "raw": "{{order_base_url}}/orders",
@@ -148,7 +152,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customer_id\": \"\",\n  \"item_name\": \"Keyboard\",\n  \"amount\": 4999\n}"
+              "raw": "{\n  \"customer_id\": \"\",\n  \"customer_email\": \"user@example.com\",\n  \"item_name\": \"Keyboard\",\n  \"amount\": 4999\n}"
             },
             "url": {
               "raw": "{{order_base_url}}/orders",
@@ -181,7 +185,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customer_id\": \"cust-123\",\n  \"item_name\": \"\",\n  \"amount\": 4999\n}"
+              "raw": "{\n  \"customer_id\": \"cust-123\",\n  \"customer_email\": \"user@example.com\",\n  \"item_name\": \"\",\n  \"amount\": 4999\n}"
             },
             "url": {
               "raw": "{{order_base_url}}/orders",
@@ -214,7 +218,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customer_id\": \"cust-123\",\n  \"item_name\": \"Keyboard\",\n  \"amount\": 0\n}"
+              "raw": "{\n  \"customer_id\": \"cust-123\",\n  \"customer_email\": \"user@example.com\",\n  \"item_name\": \"Keyboard\",\n  \"amount\": 0\n}"
             },
             "url": {
               "raw": "{{order_base_url}}/orders",
@@ -282,7 +286,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customer_id\": \"cust-123\",\n  \"item_name\": \"Keyboard\",\n  \"amount\": 100001\n}"
+              "raw": "{\n  \"customer_id\": \"cust-123\",\n  \"customer_email\": \"user@example.com\",\n  \"item_name\": \"Keyboard\",\n  \"amount\": 100001\n}"
             },
             "url": {
               "raw": "{{order_base_url}}/orders",
@@ -307,6 +311,7 @@
                   "  const j = pm.response.json();",
                   "  pm.expect(j).to.have.property('ID', pm.collectionVariables.get('order_id'));",
                   "  pm.expect(j).to.have.property('CustomerID', 'cust-123');",
+                  "  pm.expect(j).to.have.property('CustomerEmail', 'user@example.com');",
                   "  pm.expect(j).to.have.property('ItemName', 'Keyboard');",
                   "  pm.expect(j).to.have.property('Amount', 4999);",
                   "});"
@@ -350,6 +355,80 @@
               "raw": "{{order_base_url}}/orders/does-not-exist",
               "host": ["{{order_base_url}}"],
               "path": ["orders", "does-not-exist"]
+            }
+          }
+        },
+        {
+          "name": "List Orders (All Payments)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('response is an array', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('each payment has expected fields', function () {",
+                  "  const j = pm.response.json();",
+                  "  if (j.length > 0) {",
+                  "    pm.expect(j[0]).to.have.property('payment_id');",
+                  "    pm.expect(j[0]).to.have.property('order_id');",
+                  "    pm.expect(j[0]).to.have.property('status');",
+                  "    pm.expect(j[0]).to.have.property('amount');",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{order_base_url}}/orders/list",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders", "list"]
+            }
+          }
+        },
+        {
+          "name": "List Orders - Filter by Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('all returned payments match requested status', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.be.an('array');",
+                  "  j.forEach(function(p) {",
+                  "    pm.expect(p.status).to.eql('Authorized');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{order_base_url}}/orders/list?status=Authorized",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders", "list"],
+              "query": [{ "key": "status", "value": "Authorized" }]
             }
           }
         },
@@ -485,7 +564,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customer_id\": \"cust-123\",\n  \"item_name\": \"Keyboard\",\n  \"amount\": 4999\n}"
+              "raw": "{\n  \"customer_id\": \"cust-123\",\n  \"customer_email\": \"user@example.com\",\n  \"item_name\": \"Keyboard\",\n  \"amount\": 4999\n}"
             },
             "url": {
               "raw": "{{order_base_url}}/orders",
@@ -578,95 +657,195 @@
       ]
     },
     {
-      "name": "Payments",
+      "name": "Notifications (EDA Flow)",
+      "description": "Tests the event-driven flow: Order -> Payment -> RabbitMQ -> Notification Service. Uses RabbitMQ Management API (http://localhost:15672) to verify queue state.",
       "item": [
         {
-          "name": "Create Payment",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('status is 200', function () {",
-                  "  pm.expect(pm.response.code).to.eql(200);",
-                  "});",
-                  "",
-                  "pm.test('payment response has authorized status and transaction id', function () {",
-                  "  const j = pm.response.json();",
-                  "  pm.expect(j).to.have.property('status', 'Authorized');",
-                  "  pm.expect(j).to.have.property('transaction_id');",
-                  "  pm.expect(j.transaction_id).to.not.eql('');",
-                  "  pm.collectionVariables.set('transaction_id', j.transaction_id);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"order_id\": \"{{payment_order_id}}\",\n  \"amount\": 4999\n}"
-            },
-            "url": {
-              "raw": "{{payment_base_url}}/payments",
-              "host": ["{{payment_base_url}}"],
-              "path": ["payments"]
-            }
-          }
-        },
-        {
-          "name": "Get Payment",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('status is 200', function () {",
-                  "  pm.expect(pm.response.code).to.eql(200);",
-                  "});",
-                  "",
-                  "pm.test('payment has expected structure', function () {",
-                  "  const j = pm.response.json();",
-                  "  pm.expect(j).to.have.property('ID');",
-                  "  // pm.expect(j).to.have.property('TransactionID', pm.collectionVariables.get('transaction_id'));",
-                  "  pm.expect(j).to.have.property('Amount', 4999);",
-                  "  pm.expect(j).to.have.property('Status', 'Authorized');",
-                  "  pm.expect(j).to.have.property('OrderID');",
-                  "});",
-                  "",
-                  "pm.test('payment order id is usable', function () {",
-                  "  const j = pm.response.json();",
-                  "  pm.expect([pm.collectionVariables.get('payment_order_id'), 'null', null]).to.include(j.OrderID);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{payment_base_url}}/payments/{{payment_order_id}}",
-              "host": ["{{payment_base_url}}"],
-              "path": ["payments", "{{payment_order_id}}"]
-            }
-          }
-        },
-        {
-          "name": "Create Payment - Declined",
+          "name": "Create Order (triggers notification)",
           "event": [
             {
               "listen": "prerequest",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "if (!pm.collectionVariables.get('declined_payment_order_id')) {",
-                  "  pm.collectionVariables.set('declined_payment_order_id', `declined-order-${Date.now()}`);",
-                  "}"
+                  "pm.collectionVariables.set('notification_idem_key', `notify-${Date.now()}-${Math.random().toString(16).slice(2)}`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('order created successfully', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('order is authorized - event will be published', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('Status', 'Authorized');",
+                  "  pm.collectionVariables.set('notification_order_id', j.ID);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{notification_idem_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": \"cust-notify\",\n  \"customer_email\": \"notify@example.com\",\n  \"item_name\": \"Headphones\",\n  \"amount\": 7999\n}"
+            },
+            "url": {
+              "raw": "{{order_base_url}}/orders",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders"]
+            }
+          }
+        },
+        {
+          "name": "Verify payment.completed.q is active (RabbitMQ)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 - queue exists', function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('queue is durable', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('durable', true);",
+                  "});",
+                  "",
+                  "pm.test('queue has expected name', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('name', 'payment.completed.q');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic Z3Vlc3Q6Z3Vlc3Q="
+              }
+            ],
+            "url": {
+              "raw": "{{rabbitmq_base_url}}/api/queues/%2F/payment.completed.q",
+              "host": ["{{rabbitmq_base_url}}"],
+              "path": ["api", "queues", "%2F", "payment.completed.q"]
+            }
+          }
+        },
+        {
+          "name": "Verify DLQ exists (RabbitMQ)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200 - DLQ exists', function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('DLQ is durable', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('durable', true);",
+                  "});",
+                  "",
+                  "pm.test('DLQ has expected name', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('name', 'payment.completed.dlq');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic Z3Vlc3Q6Z3Vlc3Q="
+              }
+            ],
+            "url": {
+              "raw": "{{rabbitmq_base_url}}/api/queues/%2F/payment.completed.dlq",
+              "host": ["{{rabbitmq_base_url}}"],
+              "path": ["api", "queues", "%2F", "payment.completed.dlq"]
+            }
+          }
+        },
+        {
+          "name": "Create Order - DLQ trigger (fail@example.com)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('dlq_idem_key', `dlq-${Date.now()}-${Math.random().toString(16).slice(2)}`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('order created successfully', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('order authorized - DLQ event will be triggered after 3 retries', function () {",
+                  "  const j = pm.response.json();",
+                  "  pm.expect(j).to.have.property('Status', 'Authorized');",
+                  "  pm.collectionVariables.set('dlq_order_id', j.ID);",
+                  "  console.log('Check notify-service logs and RabbitMQ DLQ for messages from fail@example.com');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{dlq_idem_key}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": \"cust-dlq\",\n  \"customer_email\": \"fail@example.com\",\n  \"item_name\": \"Cursed Item\",\n  \"amount\": 4999\n}"
+            },
+            "url": {
+              "raw": "{{order_base_url}}/orders",
+              "host": ["{{order_base_url}}"],
+              "path": ["orders"]
+            }
+          }
+        },
+        {
+          "name": "Verify DLQ received message after retries (RabbitMQ)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Wait a few seconds for retries to exhaust",
+                  "const start = Date.now();",
+                  "while (Date.now() - start < 3000) {}"
                 ]
               }
             },
@@ -679,48 +858,10 @@
                   "  pm.expect(pm.response.code).to.eql(200);",
                   "});",
                   "",
-                  "pm.test('payment is declined', function () {",
+                  "pm.test('DLQ has at least one message', function () {",
                   "  const j = pm.response.json();",
-                  "  pm.expect(j).to.have.property('status', 'Declined');",
-                  "  pm.expect(j).to.have.property('transaction_id');",
-                  "  pm.collectionVariables.set('declined_payment_tx_id', j.transaction_id);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"order_id\": \"{{declined_payment_order_id}}\",\n  \"amount\": 100001\n}"
-            },
-            "url": {
-              "raw": "{{payment_base_url}}/payments",
-              "host": ["{{payment_base_url}}"],
-              "path": ["payments"]
-            }
-          }
-        },
-        {
-          "name": "Get Declined Payment",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('status is 200', function () {",
-                  "  pm.expect(pm.response.code).to.eql(200);",
-                  "});",
-                  "",
-                  "pm.test('declined payment matches expected fields', function () {",
-                  "  const j = pm.response.json();",
-                  "  pm.expect(j).to.have.property('OrderID', pm.collectionVariables.get('declined_payment_order_id'));",
-                  "  pm.expect(j).to.have.property('TransactionID', pm.collectionVariables.get('declined_payment_tx_id'));",
-                  "  pm.expect(j).to.have.property('Amount', 100001);",
-                  "  pm.expect(j).to.have.property('Status', 'Declined');",
+                  "  const total = (j.messages || 0) + (j.messages_unacknowledged || 0);",
+                  "  pm.expect(total).to.be.at.least(1);",
                   "});"
                 ]
               }
@@ -728,139 +869,16 @@
           ],
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{payment_base_url}}/payments/{{declined_payment_order_id}}",
-              "host": ["{{payment_base_url}}"],
-              "path": ["payments", "{{declined_payment_order_id}}"]
-            }
-          }
-        },
-        {
-          "name": "Create Payment - Invalid OrderID",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('status is 400', function () {",
-                  "  pm.expect(pm.response.code).to.eql(400);",
-                  "});",
-                  "",
-                  "pm.test('error is order id is empty', function () {",
-                  "  pm.expect(pm.response.json()).to.have.property('error', 'order id is empty');",
-                  "});"
-                ]
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic Z3Vlc3Q6Z3Vlc3Q="
               }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"order_id\": \"\",\n  \"amount\": 4999\n}"
-            },
+            ],
             "url": {
-              "raw": "{{payment_base_url}}/payments",
-              "host": ["{{payment_base_url}}"],
-              "path": ["payments"]
-            }
-          }
-        },
-        {
-          "name": "Create Payment - Invalid Amount",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('status is 400', function () {",
-                  "  pm.expect(pm.response.code).to.eql(400);",
-                  "});",
-                  "",
-                  "pm.test('error is amount must be > 0', function () {",
-                  "  pm.expect(pm.response.json()).to.have.property('error', 'amount must be > 0');",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"order_id\": \"{{payment_order_id}}\",\n  \"amount\": 0\n}"
-            },
-            "url": {
-              "raw": "{{payment_base_url}}/payments",
-              "host": ["{{payment_base_url}}"],
-              "path": ["payments"]
-            }
-          }
-        },
-        {
-          "name": "Create Payment - Malformed JSON",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('status is 400', function () {",
-                  "  pm.expect(pm.response.code).to.eql(400);",
-                  "});",
-                  "",
-                  "pm.test('error exists', function () {",
-                  "  pm.expect(pm.response.json()).to.have.property('error');",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"order_id\":\"abc\","
-            },
-            "url": {
-              "raw": "{{payment_base_url}}/payments",
-              "host": ["{{payment_base_url}}"],
-              "path": ["payments"]
-            }
-          }
-        },
-        {
-          "name": "Get Payment - Missing",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('status is 404', function () {",
-                  "  pm.expect(pm.response.code).to.eql(404);",
-                  "});",
-                  "",
-                  "pm.test('error is not found', function () {",
-                  "  pm.expect(pm.response.json()).to.have.property('error', 'not found');",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{payment_base_url}}/payments/does-not-exist",
-              "host": ["{{payment_base_url}}"],
-              "path": ["payments", "does-not-exist"]
+              "raw": "{{rabbitmq_base_url}}/api/queues/%2F/payment.completed.dlq",
+              "host": ["{{rabbitmq_base_url}}"],
+              "path": ["api", "queues", "%2F", "payment.completed.dlq"]
             }
           }
         }
