@@ -2,8 +2,8 @@ package app
 
 import (
 	"database/sql"
-	"os"
 
+	"github.com/Fipaan/ap2-uni/config"
 	"github.com/Fipaan/ap2-uni/payment-service/internal/infrastructure/mq"
 	"github.com/Fipaan/ap2-uni/payment-service/internal/repo"
 	"github.com/Fipaan/ap2-uni/payment-service/internal/usecase"
@@ -16,7 +16,7 @@ type App struct {
 }
 
 func NewApp(db *sql.DB) (*App, error) {
-	pub, err := mq.NewPublisher(os.Getenv("RABBITMQ_URL"), "payments.events")
+	pub, err := mq.NewPublisher(config.RabbitMQAddr(), "payments.events")
 	if err != nil {
 		return nil, err
 	}

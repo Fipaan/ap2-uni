@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Fipaan/ap2-uni/payment-service/internal/domain"
@@ -78,13 +79,12 @@ func (uc *PaymentUsecase) Process(ctx context.Context, orderID string, amount in
 		Status:        p.Status,
 		CreatedAt:     time.Now().UTC(),
 	}
-	
-	if err := uc.publisher.PublishPaymentCompleted(ctx, evt); err != nil {
-		err = fmt.Errorf("publish payment completed: %w", err)
-		return
-	}
 
-	return p, nil
+	err = uc.publisher.PublishPaymentCompleted(ctx, &evt)
+	if err != nil {
+		err = fmt.Errorf("publish payment completed: %w", err)
+	}
+	return
 }
 
 func (uc *PaymentUsecase) List(ctx context.Context, status string) (p *[]domain.Payment, err error) {

@@ -9,6 +9,7 @@ const (
 	defaultPaymentGRPCAddr = "127.0.0.1:9090"
 	defaultOrderDB_DSN     = "postgres://postgres:password@localhost:5432/order_db?sslmode=disable"
 	defaultPaymentDB_DSN   = "postgres://postgres:password@localhost:5432/payment_db?sslmode=disable"
+	defaultRMQAddr         = "amqp://guest:guest@rabbitmq:5672/"
 )
 
 func tryEnv(key, fallback string) string {
@@ -35,4 +36,7 @@ func OrderDB_DSN() string {
 }
 func PaymentDB_DSN() string {
 	return tryEnv("PAYMENT_DB_DSN", defaultPaymentDB_DSN)
+}
+func RabbitMQAddr() string {
+	return tryEnv("RABBITMQ_ADDR", defaultRMQAddr)
 }

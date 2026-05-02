@@ -148,6 +148,7 @@ func preClean(cmd *nob.Cmd) (err error) {
 var SERVICES = []Service{
 	Service{Name: "order",   DB_User: "postgres"},
 	Service{Name: "payment", DB_User: "postgres"},
+	Service{Name: "notify",  DB_User: "postgres"},
 }
 
 func listServices() {

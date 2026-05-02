@@ -63,7 +63,7 @@ func NewPublisher(amqpURL, exchange string) (*Publisher, error) {
 	}, nil
 }
 
-func (p *Publisher) PublishPaymentCompleted(ctx context.Context, evt domain.PaymentCompletedEvent) error {
+func (p *Publisher) PublishPaymentCompleted(ctx context.Context, evt *domain.PaymentCompletedEvent) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
