@@ -1,9 +1,10 @@
 FROM golang:1.25-alpine AS builder
 WORKDIR /app
 RUN apk add --no-cache postgresql-client
-COPY go.mod go.sum ./
-RUN go mod download
+COPY go.mod ./
 COPY . .
+RUN go mod tidy
+RUN go mod download
 RUN go build -o nob ./nob.go
 
 ARG DB_HOST=postgres

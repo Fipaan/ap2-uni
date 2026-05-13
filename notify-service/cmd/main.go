@@ -6,7 +6,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	"github.com/redis/go-redis/v9"
+
+	"github.com/Fipaan/ap2-uni/config"
 	"github.com/Fipaan/ap2-uni/notify-service/internal/idempotency"
 	"github.com/Fipaan/ap2-uni/notify-service/internal/infrastructure/mq"
 	"github.com/Fipaan/ap2-uni/notify-service/internal/infrastructure/notify"
