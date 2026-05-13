@@ -4,7 +4,7 @@ go 1.25.5
 
 require (
 	github.com/Fipaan/ap2-uni-op-gen v0.1.9
-	github.com/Fipaan/ap2-uni/config v0.0.0-20260513103815-3e6655541c6f
+	github.com/Fipaan/ap2-uni/config v0.0.0-20260513104257-f4e6a609541f
 	github.com/gin-gonic/gin v1.12.0
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.12.3

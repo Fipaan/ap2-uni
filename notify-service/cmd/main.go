@@ -12,21 +12,18 @@ import (
 	"github.com/Fipaan/ap2-uni/notify-service/internal/infrastructure/notify"
 )
 
-func getEnv(k, def string) string {
-	if v := os.Getenv(k); v != "" {
-		return v
-	}
-	return def
-}
-
 func main() {
-	amqpURL := getEnv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672/")
+	amqpURL   := config.RabbitMQAddr()
+	redisAddr := config.RedisAddr()
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	store := idempotency.NewStore()
-	notifier := notify.NewEmailNotifier()
+    redisClient := redis.NewClient(&redis.Options{Addr: redisAddr})
+    defer redisClient.Close()
+
+	store    := idempotency.NewStore(redisClient, 24*time.Hour)
+	notifier := notify.NewFromEnv()
 
 	consumer, err := mq.NewConsumer(amqpURL, store, notifier)
 	if err != nil {

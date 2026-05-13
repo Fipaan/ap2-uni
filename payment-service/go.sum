@@ -6,6 +6,10 @@ github.com/Fipaan/ap2-uni/config v0.0.0-20260502195747-a4389662fbad h1:4vHwdSfPO
 github.com/Fipaan/ap2-uni/config v0.0.0-20260502195747-a4389662fbad/go.mod h1:tbblSDpHLfyWIKok1r4nKD5ttboC4NL/qF0OnLfk8zA=
 github.com/Fipaan/ap2-uni/config v0.0.0-20260513101136-d0c7a0b7864b h1:sloonujZfC/wcqy7kHluGJlHKurDr1ZeYAgG/WL3Apc=
 github.com/Fipaan/ap2-uni/config v0.0.0-20260513101136-d0c7a0b7864b/go.mod h1:tbblSDpHLfyWIKok1r4nKD5ttboC4NL/qF0OnLfk8zA=
+github.com/Fipaan/ap2-uni/config v0.0.0-20260513104035-c22981028550 h1:6cztfcZ1HeB8iz9OzyeNCJE/XE4iIheIk7izQz+fjz4=
+github.com/Fipaan/ap2-uni/config v0.0.0-20260513104035-c22981028550/go.mod h1:tbblSDpHLfyWIKok1r4nKD5ttboC4NL/qF0OnLfk8zA=
+github.com/Fipaan/ap2-uni/config v0.0.0-20260513104257-f4e6a609541f h1:I88MRszXLyua4IbySJwSC0MzXRyD4z15aQiUvk+FWEM=
+github.com/Fipaan/ap2-uni/config v0.0.0-20260513104257-f4e6a609541f/go.mod h1:tbblSDpHLfyWIKok1r4nKD5ttboC4NL/qF0OnLfk8zA=
 github.com/Fipaan/lib.go v0.1.1 h1:TA+go9zXIK0gvsQl9EmrxrgQd6BCF9gg5psiBBxOjjE=
 github.com/Fipaan/lib.go v0.1.1/go.mod h1:kYgTqczdY1SYLTgfJIZSUxh7fGxtICRB+zltV3j0pvE=
 github.com/Fipaan/nob.go v0.1.1 h1:PxxlLaaGPwlxwLgY98oiQRIB4d3G8FWpNI3jU+bIoG0=
