@@ -76,3 +76,11 @@ Uses `os/signal` with `SIGINT`/`SIGTERM`. On shutdown:
 - gRPC server stops gracefully.
 - Payment gRPC client connection is closed.
 - PostgreSQL listener is stopped.
+- Redis cache connection is closed.
+
+# Caching
+
+Order Service uses a **cache-aside** pattern backed by Redis:
+- `GET /orders/:id` checks Redis before hitting the DB.
+- Cache entries have a configurable TTL (default `5m`, set via `CACHE_TTL` env var).
+- Cache is invalidated on every status update to prevent stale reads.

@@ -18,22 +18,43 @@ This project implements three microservices connected via gRPC and RabbitMQ, fol
 
 # How to Run
 
-### Local (requires PostgreSQL + RabbitMQ running)
+### Local (requires PostgreSQL + RabbitMQ + Redis running)
 ```sh
 git clone https://github.com/Fipaan/ap2-uni.git
 cd ap2-uni/
 go build -o nob
-./nob -clean            # initialize all databases
-./nob -l                # list all services
-./nob -s <service-name> # start a service (order | payment | notify)
+./nob -clean                  # initialize all databases
+./nob -l                      # listoall services
+./nob -clean-s <service-name> # clean a service
+./nob -s <service-name>       # start a service
 ```
 
 ### Docker (recommended)
+
+#### Build everything
 ```sh
-docker compose up --build
+$ docker compose build
 ```
 
-All services, databases, and RabbitMQ are orchestrated automatically. Databases are initialized on first start.
+#### Clean DB on all services
+```sh
+$ docker compose run --build --rm order-service ./nob -clean
+```
+
+#### Clean DB on service
+```sh
+$ docker compose run --build --rm order-service ./nob -clean-s <service-name>
+```
+
+#### Run everything
+```sh
+$ docker compose up --build
+```
+
+#### Run service
+```sh
+$ docker compose run --build --rm <service-name>-service ./nob -s <service-name>
+```
 
 ---
 
@@ -80,6 +101,8 @@ Each service follows Clean Architecture:
 | Order status updates  | PostgreSQL LISTEN/NOTIFY + gRPC streaming |
 | Databases             | PostgreSQL (separate DB per service) |
 | Containerization      | Docker Compose    |
+| Order caching         | Redis (cache-aside, 5min TTL) |
+| Notification dedup    | Redis (idempotency store)     |
 
 ---
 
@@ -91,7 +114,7 @@ Each service follows Clean Architecture:
 | **Durable queues**| Queue and exchange declared with `durable=true` |
 | **Persistent messages** | `DeliveryMode=Persistent` on all published messages |
 | **Publisher confirms** | Payment Service waits for broker ACK before returning |
-| **Idempotency**   | Notification Service deduplicates by `event_id` (in-memory store) |
+| **Idempotency**   | Notification Service deduplicates by `event_id` via Redis (persistent across restarts) |
 | **DLQ**           | Messages failing after 3 retries are routed to `payment.completed.dlq` |
 | **Graceful shutdown** | All services handle `SIGINT`/`SIGTERM` via `os/signal` |
 
@@ -101,7 +124,7 @@ Each service follows Clean Architecture:
 
 **Order Service**: deduplicates via `Idempotency-Key` HTTP header. Enforced both in application logic and via a unique DB index on `idempotency_key`.
 
-**Notification Service**: deduplicates via `event_id` field in the event payload. On receipt, checks an in-memory store before processing. If already seen, ACKs and skips.
+**Notification Service**: deduplicates via `event_id` field in the event payload. On receipt, checks Redis before processing. If already seen, ACKs and skips. Persists across restarts.
 
 ---
 

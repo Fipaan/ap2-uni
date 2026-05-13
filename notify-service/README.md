@@ -32,9 +32,7 @@ On each message:
 
 # Idempotency
 
-Uses an in-memory store (`idempotency.Store`) keyed by `event_id`. If the same event is delivered twice, the second delivery is ACKed and skipped without re-processing.
-
-NOTE: store is in-memory. For production, it's better to use persistent store (e.g. Redis or a DB table).
+Uses Redis (`idempotency.Store`) keyed by `event_id` with a 24h TTL. If the same event is delivered twice, the second delivery is ACKed and skipped. Persists across service restarts.
 
 ---
 
@@ -47,7 +45,7 @@ Implements a DLQ for permanent failures:
 - DLQ queue: `payment.completed.dlq`
 
 **Retry logic:**
-- On processing failure, the message is re-published to the main exchange with an incremented `x-retry-count` header.
+- On processing failure, the worker sleeps with **exponential backoff** (2s, 4s, 8s) before re-publishing.
 - After **3 failed attempts**, the message is moved to the DLQ with an `x-dead-letter-reason` header explaining the failure.
 
 **To simulate a DLQ scenario**, send an order with `customer_email: "fail@example.com"` — the notifier will permanently fail for this address.
@@ -59,3 +57,13 @@ Implements a DLQ for permanent failures:
 Uses `os/signal` with `SIGINT`/`SIGTERM`. On shutdown:
 - Consumer loop exits cleanly.
 - RabbitMQ channel and connection are closed via `consumer.Close()`.
+
+# Notification Provider
+
+Uses the **Adapter Pattern** — business logic depends on a `Provider` interface, not a concrete implementation.
+
+Set `PROVIDER_MODE` env var to switch:
+| Value       | Behavior |
+|-------------|----------|
+| `SIMULATED` | Logs notification, simulates latency (100-500ms) and 20% random transient failures |
+| `REAL`      | SMTP/Mailjet integration (not yet implemented) |
