@@ -6,7 +6,7 @@ import (
 
 func NewFromEnv() Provider {
     if config.ProviderMode() == "REAL" {
-        return NewSMTPProvider()
+        panic("REAL provider not implemented")
     }
     return NewSimulatedProvider()
 }

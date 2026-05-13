@@ -14,7 +14,7 @@ const (
 	defaultRMQAddr         = "amqp://guest:guest@rabbitmq:5672/"
 
 	defaultRedisAddr       = "redis:6379"
-	defaultCacheTTL        = "5m"
+	defaultCacheTTL        = 5 * time.Minute
 	defaultProviderMode    = "SIMULATED"
 )
 
@@ -55,8 +55,12 @@ func RabbitMQAddr() string {
 func RedisAddr() string {
 	return tryEnv("REDIS_ADDR", defaultRedisAddr)
 }
-func CacheTTL() string {
-	return tryEnv("CACHE_TTL", defaultCacheTTL)
+func CacheTTL() time.Duration {
+    v := os.getEnv("CACHE_TTL")
+    if d, err := time.ParseDuration(v); err == nil {
+        return d
+    }
+    return defaultCacheTTL
 }
 func ProviderMode() string {
 	return tryEnv("PROVIDER_MODE", defaultProviderMode)

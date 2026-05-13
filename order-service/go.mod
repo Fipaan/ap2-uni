@@ -4,7 +4,7 @@ go 1.25.5
 
 require (
 	github.com/Fipaan/ap2-uni-op-gen v0.1.9
-	github.com/Fipaan/ap2-uni/config v0.0.0-20260427083107-57926aaad77a
+	github.com/Fipaan/ap2-uni/config v0.0.0-20260513101136-d0c7a0b7864b
 	github.com/gin-gonic/gin v1.12.0
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.12.3
@@ -13,6 +13,9 @@ require (
 )
 
 require (
+	github.com/Fipaan/ap2-uni v0.1.18 // indirect
+	github.com/Fipaan/lib.go v0.1.1 // indirect
+	github.com/Fipaan/nob.go v0.1.1 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.15.0 // indirect
 	github.com/bytedance/sonic/loader v0.5.0 // indirect
