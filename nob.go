@@ -1,15 +1,15 @@
 package main
 
 import (
-	"fmt"
-	"flag"
-	"time"
-	"os"
-	"io/fs"
-	"strings"
-	"errors"
-	"path/filepath"
 	"encoding/json"
+	"errors"
+	"flag"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
 	fstring "github.com/Fipaan/lib.go/string"
 	nob "github.com/Fipaan/nob.go"
 )
@@ -54,6 +54,10 @@ func prepareService(cmd *nob.Cmd, service Service) {
 }
 
 func cleanService(cmd *nob.Cmd, service Service) bool {
+	migPath := service.MigPath()
+	if _, err := os.Stat(migPath); os.IsNotExist(err) {
+		return true // nothing to clean
+	}
 	// re-initialize database
 	prepareService(cmd, service)
 	dbName := service.DB_ActualName()
@@ -64,7 +68,7 @@ func cleanService(cmd *nob.Cmd, service Service) bool {
 	// apply migrations
 	prepareService(cmd, service)
 	cmd.Push("-d", dbName)
-	filepath.WalkDir(service.MigPath(), func(migPath string, d fs.DirEntry, err error) error {
+	filepath.WalkDir(migPath, func(migPath string, d fs.DirEntry, err error) error {
 		if err != nil { return err }
 		if !strings.HasSuffix(migPath, ".sql") { return nil }
 		cmd.Push("-f", migPath)
