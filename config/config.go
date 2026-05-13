@@ -56,7 +56,7 @@ func RedisAddr() string {
 	return tryEnv("REDIS_ADDR", defaultRedisAddr)
 }
 func CacheTTL() time.Duration {
-    v := os.getEnv("CACHE_TTL")
+    v := os.Getenv("CACHE_TTL")
     if d, err := time.ParseDuration(v); err == nil {
         return d
     }
