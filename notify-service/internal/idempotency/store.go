@@ -1,29 +1,27 @@
 package idempotency
 
-import "sync"
+import (
+    "context"
+    "time"
+
+    "github.com/redis/go-redis/v9"
+)
 
 type Store struct {
-	mu   sync.Mutex
-	seen map[string]struct{}
+    client *redis.Client
+    ttl    time.Duration
 }
 
-func NewStore() *Store {
-	return &Store{seen: make(map[string]struct{})}
+func NewStore(client *redis.Client, ttl time.Duration) *Store {
+    return &Store{client: client, ttl: ttl}
 }
 
-func (s *Store) Seen(id string) bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if _, ok := s.seen[id]; ok {
-		return true
-	}
-	s.seen[id] = struct{}{}
-	return false
+func (s *Store) Seen(ctx context.Context, id string) (bool, error) {
+    set, err := s.client.SetNX(ctx, "idempotency:"+id, 1, s.ttl).Result()
+    if err != nil { return false, err }
+    return !set, nil
 }
 
-func (s *Store) Forget(id string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	delete(s.seen, id)
+func (s *Store) Forget(ctx context.Context, id string) error {
+	return s.client.Del(ctx, "idempotency:"+id).Err()
 }

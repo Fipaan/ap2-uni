@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/Fipaan/ap2-uni/config"
+	"github.com/Fipaan/ap2-uni/order-service/internal/infrastructure/cache"
 	"github.com/Fipaan/ap2-uni/order-service/internal/repo"
 	"github.com/Fipaan/ap2-uni/order-service/internal/usecase"
 	grpcclient "github.com/Fipaan/ap2-uni/order-service/internal/client/grpc"
@@ -19,6 +20,9 @@ type App struct {
 }
 
 func NewApp(db *sql.DB) (*App, error) {
+    redisCache, err := cache.NewRedisCache(config.RedisAddr(), config.CacheTTL())
+    if err != nil { return nil, err }
+
 	orderRepo := repo.NewOrderRepository(db)
 
 	paymentClient, err := grpcclient.NewPaymentClient(config.PaymentGRPCAddr())
@@ -26,7 +30,7 @@ func NewApp(db *sql.DB) (*App, error) {
 		return nil, err
 	}
 
-	orderUC := usecase.NewOrderUsecase(orderRepo, paymentClient)
+	orderUC := usecase.NewOrderUsecase(orderRepo, paymentClient, redisCache)
 	h := httptransport.NewHandler(orderUC)
 
 	hub := grpctransport.NewHub()

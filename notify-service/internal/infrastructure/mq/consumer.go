@@ -131,12 +131,14 @@ func (c *Consumer) handle(ctx context.Context, msg amqp.Delivery) error {
 		return c.moveToDLQ(ctx, msg, "invalid json: "+err.Error())
 	}
 
-	if c.store.Seen(evt.EventID) {
+	seen, err := c.store.Seen(ctx, evt.EventID)
+	if err != nil { return err }
+	if seen {
 		return msg.Ack(false)
 	}
 
 	if err := c.notifier.Send(ctx, evt); err != nil {
-		c.store.Forget(evt.EventID)
+		c.store.Forget(ctx, evt.EventID)
 
 		retryCount := retryFromHeaders(msg.Headers)
 		if retryCount >= 3 {

@@ -28,13 +28,20 @@ type OrderRepository interface {
 	GetByIdempotencyKey(ctx context.Context, key string) (*domain.Order, error)
 }
 
+type Cache interface {
+    Get(ctx context.Context, id string) (*domain.Order, error)
+    Set(ctx context.Context, o *domain.Order) error
+    Delete(ctx context.Context, id string) error
+}
+
 type OrderUsecase struct {
 	repo    OrderRepository
 	payment client.PaymentClient
+	cache   Cache
 }
 
-func NewOrderUsecase(r OrderRepository, p client.PaymentClient) *OrderUsecase {
-	return &OrderUsecase{repo: r, payment: p}
+func NewOrderUsecase(r OrderRepository, p client.PaymentClient, c Cache) *OrderUsecase {
+	return &OrderUsecase{repo: r, payment: p, cache: c}
 }
 
 func (uc *OrderUsecase) Close() {
@@ -72,6 +79,7 @@ func (uc *OrderUsecase) processPayment(orderID string) {
 		order.Status = "Failed"
 	}
 	_ = uc.repo.UpdateStatus(ctx, order.ID, order.Status)
+	_ = uc.cache.Delete(ctx, order.ID)
 }
 
 func (uc *OrderUsecase) Create(ctx context.Context, customerID, customerEmail, itemName string, amount int64, idempotencyKey string) (order *domain.Order, err error) {
@@ -117,12 +125,19 @@ func (uc *OrderUsecase) Create(ctx context.Context, customerID, customerEmail, i
 	}
 
 	_ = uc.repo.UpdateStatus(ctx, order.ID, order.Status)
+	_ = uc.cache.Delete(ctx, order.ID)
 
 	return
 }
 
 func (uc *OrderUsecase) Get(ctx context.Context, id string) (*domain.Order, error) {
-	return uc.repo.GetByID(ctx, id)
+	if o, err := uc.cache.Get(ctx, id); err == nil {
+        return o, nil
+    }
+    o, err := uc.repo.GetByID(ctx, id)
+    if err != nil { return nil, err }
+    _ = uc.cache.Set(ctx, o)
+    return o, nil
 }
 
 func (uc *OrderUsecase) ListPayments(ctx context.Context, status string) ([]*paymentV1.PaymentFull, error) {
@@ -144,7 +159,9 @@ func (uc *OrderUsecase) Cancel(ctx context.Context, id string) error {
 
 	if order.Status == "Pending" ||
 	  (order.Status == "Authorized" && time.Since(order.CreatedAt) < 5*time.Second) {
-		return uc.repo.UpdateStatus(ctx, id, "Cancelled")
+		err = uc.repo.UpdateStatus(ctx, id, "Cancelled")
+		if err != nil { return err }
+		return uc.cache.Delete(ctx, order.ID)
 	}
 	return ErrNotPending
 }

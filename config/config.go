@@ -10,8 +10,12 @@ const (
 	defaultNotifyGRPCAddr  = "127.0.0.1:9092"
 	defaultOrderDB_DSN     = "postgres://postgres:password@localhost:5432/order_db?sslmode=disable"
 	defaultPaymentDB_DSN   = "postgres://postgres:password@localhost:5432/payment_db?sslmode=disable"
-	defaultNotifynDB_DSN   = "postgres://postgres:password@localhost:5432/notify_db?sslmode=disable"
+	defaultNotifyDB_DSN    = "postgres://postgres:password@localhost:5432/notify_db?sslmode=disable"
 	defaultRMQAddr         = "amqp://guest:guest@rabbitmq:5672/"
+
+	defaultRedisAddr       = "redis:6379"
+	defaultCacheTTL        = "5m"
+	defaultProviderMode    = "SIMULATED"
 )
 
 func tryEnv(key, fallback string) string {
@@ -47,4 +51,13 @@ func NotifyDB_DSN() string {
 }
 func RabbitMQAddr() string {
 	return tryEnv("RABBITMQ_ADDR", defaultRMQAddr)
+}
+func RedisAddr() string {
+	return tryEnv("REDIS_ADDR", defaultRedisAddr)
+}
+func CacheTTL() string {
+	return tryEnv("CACHE_TTL", defaultCacheTTL)
+}
+func ProviderMode() string {
+	return tryEnv("PROVIDER_MODE", defaultProviderMode)
 }
